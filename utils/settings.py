@@ -19,7 +19,6 @@ def load_env_vars(root_dir: Union[str, Path]) -> dict:
     if isinstance(root_dir, str):
         root_dir = Path(root_dir)
 
-    load_dotenv(dotenv_path=root_dir / ".env.default")
     load_dotenv(dotenv_path=root_dir / ".env", override=True)
 
     return dict(os.environ)
@@ -40,7 +39,7 @@ def get_root_dir(default_value: str = ".") -> Path:
 
 
 ML_PIPELINE_ROOT_DIR = get_root_dir()
-OUTPUT_DIR = ML_PIPELINE_ROOT_DIR / "output"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+# OUTPUT_DIR = ML_PIPELINE_ROOT_DIR / "output"
+# OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 SETTINGS = load_env_vars(root_dir=ML_PIPELINE_ROOT_DIR)
