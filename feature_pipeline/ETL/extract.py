@@ -1,6 +1,6 @@
 import pandas as pd
 from entsoe import EntsoePandasClient
-from typing import Tuple
+from typing import Tuple, Optional
 from utils.settings import ENV_VARS
 import requests
 
@@ -8,8 +8,10 @@ import requests
 def extract_day_ahead_price(country_code: str,
                            start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
                             end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
-                            to_CSV: bool = True) -> pd.DataFrame:
-    
+                            to_CSV: bool = True) -> Optional[pd.DataFrame]:
+    '''
+    Extracts day-ahead electricity prices from ENTSO-E API for a given country code.
+    '''
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
     day_ahead_prices = client.query_day_ahead_prices('NL', start_time, end_time)
     
@@ -19,16 +21,20 @@ def extract_day_ahead_price(country_code: str,
     
     if to_CSV:
         day_ahead_prices_df.to_csv(f'../data/{country_code}_day_ahead_prices.csv')
+        print(f"Day ahead price data successfully saved as a csv.")
         return 
     
     return day_ahead_prices_df
+
 
 # Historical 
 def extract_physical_flows(country_code: str, 
                            start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
                            end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
-                           to_CSV: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    
+                           to_CSV: bool = True) -> Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
+    '''
+    Extracts physical electricity flows from ENTSO-E API for a given country code
+    '''
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
     import_data = client.query_physical_crossborder_allborders(country_code, start_time, end_time, export=False, per_hour=True)
     export_data = client.query_physical_crossborder_allborders(country_code, start_time, end_time, export=True, per_hour=True)
@@ -36,28 +42,34 @@ def extract_physical_flows(country_code: str,
     if to_CSV:
         import_data.to_csv(f'../data/{country_code}_import_flow.csv')
         export_data.to_csv(f'../data/{country_code}_export_flow.csv')
+        print(f'Import and export physcial flows successfully saved for {country_code}.')
         return 
     
     return import_data, export_data
 
+
 def extract_energy_generation(country_code: str, 
                               start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
                               end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
-                              to_CSV: bool = True) -> pd.DataFrame:
-    
+                              to_CSV: bool = True) -> Optional[pd.DataFrame]:
+    '''
+    Extracts energy generation data from ENTSO-E API for a given country code
+    '''
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
     generation_data = client.query_generation(country_code, start_time, end_time, psr_type=None)
 
     if to_CSV:
         generation_data.to_csv(f'../data/{country_code}_energy_generation.csv')
+        print(f'Energy generation successfully saved for {country_code}.')
         return 
     return generation_data
 
+
 def extract_historical_weather_data(latitude: float = 52.24,
-                         longitude: float = 5.63,
-                         start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
-                         end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
-                         to_CSV: bool = True) -> pd.DataFrame:
+                                    longitude: float = 5.63,
+                                    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
+                                    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                                    to_CSV: bool = True) -> Optional[pd.DataFrame]:
     """
     Extracts hourly weather data from Open-Meteo's ERA5 reanalysis archive. 
         Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 
@@ -126,10 +138,11 @@ def extract_energy_generation_forecasts(country_code: str,
     generation_forecasts = client.query_generation_forecast(country_code, start_time, end_time)
     return generation_forecasts
 
+
 def extract_weather_forecast(latitude: float = 52.24,
                              longitude: float = 5.63,
                              start_time: pd.Timestamp = pd.Timestamp.today(tz='Europe/Amsterdam').normalize(),
-                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam')) -> pd.DataFrame:
+                             end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam')) -> Optional[pd.DataFrame]:
     """
     Extracts future forecast data (hourly) from Open-Meteo's forecast endpoint. Up to 7–16 days max in the future. 
         Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 

@@ -4,46 +4,52 @@ from great_expectations.core import ExpectationSuite, ExpectationConfiguration
 
 # clean and validation
 def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame) -> pd.DataFrame:
-    export_data = reformat_flow(export_data, export=True)
-    import_data = reformat_flow(import_data, export=False)
+    export_data = transform_flow(export_data, export=True)
+    import_data = transform_flow(import_data, export=False)
     combined_data = pd.concat([export_data, import_data], ignore_index=True)
     combined_data = combined_data.sort_values(by='datetime')
     combined_data = combined_data.reset_index(drop=True)
     return combined_data
 
 
-def reformat_flow(data: pd.DataFrame, export: bool = True, from_api: bool = False) -> pd.DataFrame:
-    data = _clean_flow_columns(data, from_api=from_api)
+def transform_flow(df: pd.DataFrame, export: bool = True, from_api: bool = False) -> pd.DataFrame:
+    df_cleaned = df.copy()
+
+    df_cleaned = _clean_flow_columns(df_cleaned, from_api=from_api)
     if export:
-        data = data.melt(
+        df_cleaned = df_cleaned.melt(
             id_vars=['datetime'],  # Keep 'datetime' as is
             var_name='country_to',  # New column for countries
             value_name='energy_sent'  # New column for energy values
             )
-        data['country_from'] = 'NL'
+        df_cleaned['country_from'] = 'NL'
     else:
-        data = data.melt(
+        df_cleaned = df_cleaned.melt(
             id_vars=['datetime'],  # Keep 'datetime' as is
             var_name='country_from',  # New column for countries
             value_name='energy_sent'  # New column for energy values
             )
-        data['country_to'] = 'NL'
+        df_cleaned['country_to'] = 'NL'
     
-    data = data[['datetime', 'country_from', 'country_to', 'energy_sent']]
-    data.reset_index(drop=True, inplace=True)
-    return data
+    df_cleaned = df_cleaned[['datetime', 'country_from', 'country_to', 'energy_sent']]
+    df_cleaned.reset_index(drop=True, inplace=True)
+    return df_cleaned
 
 
-def _clean_flow_columns(data: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
+def _clean_flow_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
+    df_cleaned = df.copy()
+
     if from_api:
-        data = data.reset_index()
-        data = data.rename(columns={'index': 'datetime'})
+        df_cleaned = df_cleaned.reset_index()
+        df_cleaned = df_cleaned.rename(columns={'index': 'datetime'}, inplace=True)
     else:
-        data = data.rename(columns={'Unnamed: 0': 'datetime'})
-    data = data.drop(columns=['sum'])
-    data['datetime'] = pd.to_datetime(data['datetime'], utc=True).dt.tz_convert('Europe/Amsterdam')
-    data = data.fillna(0)
-    return data
+        df_cleaned = df_cleaned.rename(columns={'Unnamed: 0': 'datetime'}, inplace=True)
+    df_cleaned = df_cleaned.drop(columns=['sum'])
+    df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
+    # TODO: check this
+    df_cleaned = df_cleaned.fillna(0)
+    # df_cleaned.dropna(axis=0, how='any', inplace=True)
+    return df_cleaned
 
 
 def transform_weather_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -82,3 +88,4 @@ def transform_day_ahead_prices(df: pd.DataFrame) -> pd.DataFrame:
     df_cleaned.dropna(axis=0, how='any', inplace=True)
 
     return df_cleaned
+
