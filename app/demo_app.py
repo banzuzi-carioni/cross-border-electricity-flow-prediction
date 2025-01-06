@@ -2,10 +2,10 @@ import streamlit as st
 import pydeck as pdk
 import pandas as pd
 from entsoe import EntsoePandasClient
-from utils.settings import SETTINGS
+from utils.settings import ENV_VARS
 from app_utils import BZN2CITY, get_city_coordinates
 
-client = EntsoePandasClient(api_key=SETTINGS['EntsoePandasClient'])
+client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
 
 start = pd.Timestamp('20240523', tz='Europe/Stockholm')
 end = pd.Timestamp('20240524', tz='Europe/Stockholm')
@@ -14,7 +14,7 @@ end = pd.Timestamp('20240524', tz='Europe/Stockholm')
 FI_import = list(client.query_physical_crossborder_allborders('FI', start, end, export=False).columns)[:-1]
 FI_export = list(client.query_physical_crossborder_allborders('FI', start, end, export=True).columns)[:-1]
 
-st.title("Nordic Visualization: Flows and Regions")
+st.title("Nordic Cross-border Electricity Flow Prediction")
 
 # Mapping of cities to coordinates
 GREEN_RGB = [0, 255, 0, 150]
