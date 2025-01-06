@@ -1,18 +1,11 @@
 
-BZN2CITY = {
-    'NL': 'Amsterdam',
-    'FI': 'Finland',
-    'SE_1': 'Luleå',
-    'SE_2': 'Sundsvall',
-    'SE_3': 'Stockholm',
-    'SE_4': 'Malmö',
-    'DK_1': 'Aalborg',
-    'DK_2': 'Copenhagen',
-    'NO_1': 'Oslo',
-    'NO_2': 'Kristiansand',
-    'NO_3': 'Molde',
-    'NO_4': 'Tromsø',
-    'NO_5': 'Bergen'
+BZN2COUNTRY = {
+    'NL': 'Netherlands',
+    'BE': 'Belgium',
+    'NO_2': 'Norway',
+    'DK_1': 'Denmark',
+    'DE_LU': 'Germany/Luxembourg',
+    'GB': 'United Kingdom'
 }
 
 NEIGHBOUR_ZONES = {

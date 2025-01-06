@@ -2,6 +2,7 @@ import pandas as pd
 from entsoe import EntsoePandasClient
 from typing import Tuple, Optional
 from utils.settings import ENV_VARS
+from utils.utils import get_country_center_coordinates
 import requests
 
 
@@ -64,12 +65,10 @@ def extract_energy_generation(country_code: str,
         return 
     return generation_data
 
-
-def extract_historical_weather_data(latitude: float = 52.24,
-                                    longitude: float = 5.63,
-                                    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
-                                    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
-                                    to_CSV: bool = True) -> Optional[pd.DataFrame]:
+def extract_historical_weather_data(country_code: str,
+                         start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
+                         end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                         to_CSV: bool = True) -> pd.DataFrame:
     """
     Extracts hourly weather data from Open-Meteo's ERA5 reanalysis archive. 
         Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 
@@ -80,6 +79,7 @@ def extract_historical_weather_data(latitude: float = 52.24,
     # Convert the Timestamps to YYYY-MM-DD (format Open-Meteo needs)
     start_date_str = start_time.strftime('%Y-%m-%d')
     end_date_str = end_time.strftime('%Y-%m-%d')
+    latitude, longitude = get_country_center_coordinates(country_code)
 
     base_url = "https://archive-api.open-meteo.com/v1/era5"
     params = {
@@ -120,7 +120,6 @@ def extract_historical_weather_data(latitude: float = 52.24,
 
     # Optionally save to CSV
     if to_CSV:
-        country_code = 'NL'
         csv_path = f"../data/{country_code}_weather_data.csv"
         df.to_csv(csv_path)
         print(f"Weather data successfully saved to {csv_path}")
@@ -138,9 +137,7 @@ def extract_energy_generation_forecasts(country_code: str,
     generation_forecasts = client.query_generation_forecast(country_code, start_time, end_time)
     return generation_forecasts
 
-
-def extract_weather_forecast(latitude: float = 52.24,
-                             longitude: float = 5.63,
+def extract_weather_forecast(country_code: str,
                              start_time: pd.Timestamp = pd.Timestamp.today(tz='Europe/Amsterdam').normalize(),
                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam')) -> Optional[pd.DataFrame]:
     """
@@ -153,7 +150,8 @@ def extract_weather_forecast(latitude: float = 52.24,
     # Convert the Timestamps to YYYY-MM-DD (the format Open-Meteo needs)
     start_date_str = start_time.strftime('%Y-%m-%d')
     end_date_str = end_time.strftime('%Y-%m-%d')
-
+    
+    latitude, longitude = get_country_center_coordinates(country_code)
     base_url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": latitude,

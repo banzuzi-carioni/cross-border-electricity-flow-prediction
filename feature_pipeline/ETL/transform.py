@@ -1,6 +1,4 @@
 import pandas as pd
-from great_expectations.core import ExpectationSuite, ExpectationConfiguration
-
 
 # clean and validation
 def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame) -> pd.DataFrame:
@@ -52,22 +50,49 @@ def _clean_flow_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFram
     return df_cleaned
 
 
-def transform_weather_data(df: pd.DataFrame) -> pd.DataFrame:
-    df_cleaned = df.copy()
+def transform_weather_data(df_NL: pd.DataFrame, 
+                           df_BE: pd.DataFrame,
+                           df_DE_LU: pd.DataFrame, 
+                           df_DK_1: pd.DataFrame,
+                           df_GB: pd.DataFrame,
+                           df_NO_2: pd.DataFrame,
+                           ) -> pd.DataFrame:
+    
+    # Dictionary to map DataFrames to their country codes
+    dfs = {
+        "NL": df_NL.copy(),
+        "BE": df_BE.copy(),
+        "DE_LU": df_DE_LU.copy(),
+        "DK_1": df_DK_1.copy(),
+        "GB": df_GB.copy(),
+        "NO_2": df_NO_2.copy(),
+    }
 
-    # 1. Rename 'time' to 'datetime'
-    df_cleaned = df_cleaned.rename(columns={'time': 'datetime'})
+    # 1. Drop the first unnamed column if it exists
+    for country_code, df in dfs.items():
+        if df.columns[0].startswith('Unnamed'):
+            df.drop(df.columns[0], axis=1, inplace=True)
 
-    # 2. Cast columns: 'datetime' column to UTC and all other columns to float64
-    df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
-    for col in df_cleaned.columns:
-        if col != 'datetime':
-            df_cleaned[col] = df_cleaned[col].astype('float64')
+    # 2. Add country code to each dataframe 
+    for country_code, df in dfs.items():
+        df['country_code'] = country_code
+    
+    # 3. Concatenate the dataframes 
+    df_combined = pd.concat(dfs.values(), axis=0, ignore_index=True)
 
-    # 3. Drop rows with any NaN values
-    df_cleaned.dropna(axis=0, how='any', inplace=True)
-
-    return df_cleaned
+    # 4. Rename 'time' to 'datetime'
+    df_combined = df_combined.rename(columns={'time': 'datetime'})
+    
+    # 5. Cast columns: 'datetime' column to UTC and all other columns to float64
+    df_combined['datetime'] = pd.to_datetime(df_combined['datetime'], utc=True)
+    for col in df_combined.columns:
+        if col not in ['datetime', 'country_code']:
+            df_combined[col] = df_combined[col].astype('float64')
+    
+    # 6. Drop rows with any NaN values
+    df_combined.dropna(axis=0, how='any', inplace=True)
+    
+    return df_combined
 
 
 def transform_day_ahead_prices(df: pd.DataFrame) -> pd.DataFrame:
