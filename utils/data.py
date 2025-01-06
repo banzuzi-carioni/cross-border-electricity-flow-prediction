@@ -1,5 +1,6 @@
 
 BZN2CITY = {
+    'NL': 'Amsterdam',
     'FI': 'Finland',
     'SE_1': 'Luleå',
     'SE_2': 'Sundsvall',
@@ -15,13 +16,7 @@ BZN2CITY = {
 }
 
 NEIGHBOUR_ZONES = {
-    'PL', 
-    'DE_LU',
-    'EE',
-    'NL',
-    'LT',
-    'RU',
-    'GB'
+    'BE', 'DE_LU', 'GB', 'NO_2', 'DK_1'
 }
 
 # feature view creation 
