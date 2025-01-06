@@ -2,58 +2,186 @@ import pandas as pd
 from entsoe import EntsoePandasClient
 from typing import Tuple
 from utils.settings import ENV_VARS
+import requests
 
 
-# ENTSOE: Physical Flows and energy generation
-def extract_physical_flows_to_csv(country_code: str, 
-                                  start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Stockholm'), 
-                                  end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Stockholm')) -> None:
+def extract_day_ahead_price(country_code: str,
+                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
+                            end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                            to_CSV: bool = True) -> pd.DataFrame:
     
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
-    import_data = client.query_physical_crossborder_allborders(country_code, start_time, end_time, export=False, per_hour=True)
-    export_data = client.query_physical_crossborder_allborders(country_code, start_time, end_time, export=True, per_hour=True)
-
-    import_data.to_csv(f'../data/{country_code}_import_flow.csv')
-    export_data.to_csv(f'../data/{country_code}_export_flow.csv')
-    return
-
-
-def extract_energy_generation_to_csv(country_code: str, 
-                                     start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Stockholm'), 
-                                     end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Stockholm')) -> None:
+    day_ahead_prices = client.query_day_ahead_prices('NL', start_time, end_time)
     
-    client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
-    generation_data = client.query_generation(country_code, start_time, end_time, psr_type=None)
-    generation_data.to_csv(f'../data/{country_code}_energy_generation.csv')
-    return
+    # convert the series to a DataFrame
+    day_ahead_prices_df = day_ahead_prices.reset_index()
+    day_ahead_prices_df.columns = ['Timestamp', 'Price']
+    
+    if to_CSV:
+        day_ahead_prices_df.to_csv(f'../data/{country_code}_day_ahead_prices.csv')
+        return 
+    
+    return day_ahead_prices_df
 
-
+# Historical 
 def extract_physical_flows(country_code: str, 
-                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Stockholm'), 
-                           end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Stockholm')) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
+                           end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                           to_CSV: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
     
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
     import_data = client.query_physical_crossborder_allborders(country_code, start_time, end_time, export=False, per_hour=True)
     export_data = client.query_physical_crossborder_allborders(country_code, start_time, end_time, export=True, per_hour=True)
+    
+    if to_CSV:
+        import_data.to_csv(f'../data/{country_code}_import_flow.csv')
+        export_data.to_csv(f'../data/{country_code}_export_flow.csv')
+        return 
+    
     return import_data, export_data
 
-
 def extract_energy_generation(country_code: str, 
-                              start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Stockholm'), 
-                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Stockholm')) -> pd.DataFrame:
+                              start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
+                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                              to_CSV: bool = True) -> pd.DataFrame:
     
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
     generation_data = client.query_generation(country_code, start_time, end_time, psr_type=None)
+
+    if to_CSV:
+        generation_data.to_csv(f'../data/{country_code}_energy_generation.csv')
+        return 
     return generation_data
 
+def extract_historical_weather_data(latitude: float = 52.24,
+                         longitude: float = 5.63,
+                         start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
+                         end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                         to_CSV: bool = True) -> pd.DataFrame:
+    """
+    Extracts hourly weather data from Open-Meteo's ERA5 reanalysis archive. 
+        Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 
+        Wind energy: surface_pressure, wind_speed_10m, wind_direction_10m, wind_speed_100m, wind_direction_100m 
+        Hydro energy: precipitation, snow_depth
+    """
+    
+    # Convert the Timestamps to YYYY-MM-DD (format Open-Meteo needs)
+    start_date_str = start_time.strftime('%Y-%m-%d')
+    end_date_str = end_time.strftime('%Y-%m-%d')
 
+    base_url = "https://archive-api.open-meteo.com/v1/era5"
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "start_date": start_date_str,
+        "end_date": end_date_str,
+        "hourly": [
+            "temperature_2m",
+            "surface_pressure",
+            "cloudcover",
+            "direct_radiation",
+            "diffuse_radiation",
+            "wind_speed_10m",
+            "wind_direction_10m",
+            "wind_speed_100m",
+            "wind_direction_100m",
+            "precipitation",
+            "snow_depth"
+        ],
+        "timezone": "Europe/Amsterdam"
+    }
+
+    response = requests.get(base_url, params=params)
+    response.raise_for_status()  # will raise an error if the request failed
+    data = response.json()
+    hourly_data = data.get("hourly", {})
+    if not hourly_data:
+        print("No weather data returned for the specified parameters.")
+        return None
+
+    # Convert to DataFrame
+    df = pd.DataFrame(hourly_data)
+    
+    # 'time' is given as an ISO string, so convert to datetime
+    df['time'] = pd.to_datetime(df['time'])
+    df.set_index('time', inplace=True)
+
+    # Optionally save to CSV
+    if to_CSV:
+        country_code = 'NL'
+        csv_path = f"../data/{country_code}_weather_data.csv"
+        df.to_csv(csv_path)
+        print(f"Weather data successfully saved to {csv_path}")
+        return None
+
+    return df
+
+
+# Forecasts 
 def extract_energy_generation_forecasts(country_code: str, 
-                                        start_time: pd.Timestamp = pd.Timestamp.today(tz='Europe/Stockholm').normalize(), 
-                                        end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Stockholm')) -> pd.DataFrame:
+                                        start_time: pd.Timestamp = pd.Timestamp.today(tz='Europe/Amsterdam').normalize(), 
+                                        end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam')) -> pd.DataFrame: 
     # seems to be only available for the next day
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
     generation_forecasts = client.query_generation_forecast(country_code, start_time, end_time)
     return generation_forecasts
 
+def extract_weather_forecast(latitude: float = 52.24,
+                             longitude: float = 5.63,
+                             start_time: pd.Timestamp = pd.Timestamp.today(tz='Europe/Amsterdam').normalize(),
+                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam')) -> pd.DataFrame:
+    """
+    Extracts future forecast data (hourly) from Open-Meteo's forecast endpoint. Up to 7–16 days max in the future. 
+        Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 
+        Wind energy: surface_pressure, wind_speed_10m, wind_direction_10m, wind_speed_100m, wind_direction_100m 
+        Hydro energy: precipitation, snow_depth
+    """
 
-# Weather data 
+    # Convert the Timestamps to YYYY-MM-DD (the format Open-Meteo needs)
+    start_date_str = start_time.strftime('%Y-%m-%d')
+    end_date_str = end_time.strftime('%Y-%m-%d')
+
+    base_url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "start_date": start_date_str,      
+        "end_date": end_date_str,          
+        "hourly": [
+            "temperature_2m",
+            "surface_pressure",
+            "cloudcover",
+            "direct_radiation",
+            "diffuse_radiation",
+            "wind_speed_10m",
+            "wind_direction_10m",
+            "wind_speed_100m",
+            "wind_direction_100m",
+            "precipitation",
+            "snow_depth"
+        ],
+        "timezone": "Europe/Amsterdam"
+    }
+
+    response = requests.get(base_url, params=params)
+    response.raise_for_status()
+    data = response.json()
+
+    # Parse the 'hourly' forecast data
+    hourly_data = data.get("hourly", {})
+    if not hourly_data:
+        print("No forecast data returned for the specified parameters/timeframe.")
+        return None
+
+    # Convert to a DataFrame
+    df = pd.DataFrame(hourly_data)
+
+    # 'time' is given as an ISO string, so convert to datetime
+    df['time'] = pd.to_datetime(df['time'])
+    df.set_index('time', inplace=True)
+
+    return df
+
+
+
+
