@@ -22,7 +22,7 @@ def extract_day_ahead_price(country_code: str,
     
     if to_CSV:
         day_ahead_prices_df.to_csv(f'../data/{country_code}_day_ahead_prices.csv')
-        print(f"Day ahead price data successfully saved as a csv.")
+        print(f'Day ahead prices successfully saved for {country_code}.')
         return 
     
     return day_ahead_prices_df
@@ -47,7 +47,6 @@ def extract_physical_flows(country_code: str,
         return 
     
     return import_data, export_data
-
 
 def extract_energy_generation(country_code: str, 
                               start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
@@ -194,5 +193,47 @@ def extract_weather_forecast(country_code: str,
     return df
 
 
+# Multiple countries 
+def extract_weather_data(load_locally = True): 
+    if load_locally: 
+        return pre_load_df('energy_generation')
+    df_NL = extract_historical_weather_data('NL')
+    df_BE = extract_historical_weather_data('BE')
+    df_DE_LU = extract_historical_weather_data('DE_LU')
+    df_DK_1 = extract_historical_weather_data('DK_1')
+    df_GB = extract_historical_weather_data('GB')
+    df_NO_2 = extract_historical_weather_data('NO_2')
+    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
+    
+def extract_price_data(load_locally = True): 
+    if load_locally: 
+        # TODO: Belgium doesnt exist 
+        return pre_load_df('day_ahead_prices')
+    df_NL = extract_day_ahead_price('NL')
+    df_BE = extract_day_ahead_price('BE') # TODO: this gives error timeout! 
+    df_DE_LU = extract_day_ahead_price('DE_LU')
+    df_DK_1 = extract_day_ahead_price('DK_1')
+    df_GB = extract_day_ahead_price('GB')
+    df_NO_2 = extract_day_ahead_price('NO_2')
+    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
 
+def extract_energy_generation_data(load_locally = True): 
+    if load_locally: 
+        return pre_load_df('energy_generation')
+    df_NL = extract_energy_generation('NL')
+    df_BE = extract_energy_generation('BE')
+    df_DE_LU = extract_energy_generation('DE_LU')
+    df_DK_1 = extract_energy_generation('DK_1')
+    df_GB = extract_energy_generation('GB')
+    df_NO_2 = extract_energy_generation('NO_2')
+    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
+    
 
+def pre_load_df(path_specific):
+    df_NL = pd.read_csv(f'../feature_pipeline/data/NL_{path_specific}.csv')
+    df_BE = pd.read_csv(f'../feature_pipeline/data/BE_{path_specific}.csv')
+    df_DE_LU = pd.read_csv(f'../feature_pipeline/data/DE_LU_{path_specific}.csv')
+    df_DK_1 = pd.read_csv(f'../feature_pipeline/data/DK_1_{path_specific}.csv')
+    df_GB = pd.read_csv(f'../feature_pipeline/data/GB_{path_specific}.csv')
+    df_NO_2 = pd.read_csv(f'../feature_pipeline/data/NO_2_{path_specific}.csv')
+    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2

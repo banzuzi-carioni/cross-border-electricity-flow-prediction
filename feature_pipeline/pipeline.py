@@ -1,4 +1,47 @@
+from feature_pipeline.ETL import extract, load, transform 
+import pandas as pd
 
-# backfill 
+# BACKFILL 
+"""
+A ETL pipeline for weather data from multiple countries.
+1) Extracts historical weather data from Open-Meteo for each country.
+2) Transforms/cleans the DataFrames into a single DataFrame.
+3) Loads the combined DataFrame into the Hopsworks Feature Store.
+"""
 
-# everyday run 
+def run():
+    # -------------------- EXTRACT --------------------
+    weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract_data()    
+
+    # -------------------- TRANSFORM --------------------
+    df_weather = transform.transform_weather_data(weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2)
+    df_prices = transform.transform_day_ahead_prices(energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2)
+    # TODO: generation
+    # TODO: combine prices and generation 
+
+    # TODO: export 
+    # TODO: import 
+
+    # -------------------- LOAD --------------------
+    weather_expectation_suite = load.create_weather_validation_suite()
+    # TODO: prices + generation 
+    # TODO: flows (export + import, or not sure what you thought about it eric?)
+    
+    # Insert data into the feature store
+    load.to_feature_store_weather(data=df_weather, 
+                                  validation_expectation_suite=weather_expectation_suite, 
+                                  feature_group_version=1
+                                  )
+
+
+def extract_data():
+    weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 =  extract.extract_weather_data()
+    energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract.extract_price_data()
+    generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract.extract_energy_generation_data()
+    # TODO: export flow
+    # TODO: import flow 
+
+    return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2
+
+if __name__ == "__main__":
+    run()

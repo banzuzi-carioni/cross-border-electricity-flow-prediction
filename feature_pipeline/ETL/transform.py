@@ -1,6 +1,6 @@
 import pandas as pd
 
-# clean and validation
+
 def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame) -> pd.DataFrame:
     export_data = transform_flow(export_data, export=True)
     import_data = transform_flow(import_data, export=False)
@@ -95,22 +95,47 @@ def transform_weather_data(df_NL: pd.DataFrame,
     return df_combined
 
 
-def transform_day_ahead_prices(df: pd.DataFrame) -> pd.DataFrame:
-    df_cleaned = df.copy()
+def transform_day_ahead_prices(
+    df_NL: pd.DataFrame,
+    df_BE: pd.DataFrame,
+    df_DE_LU: pd.DataFrame,
+    df_DK_1: pd.DataFrame,
+    df_GB: pd.DataFrame,
+    df_NO_2: pd.DataFrame,
+) -> pd.DataFrame:
 
-    # 1. Drop the first unnamed column if it exists
-    if df_cleaned.columns[0].startswith('Unnamed'):
-        df_cleaned.drop(df_cleaned.columns[0], axis=1, inplace=True)
+    # Dictionary that maps the DataFrames to their country codes
+    dfs = {
+        "NL": df_NL.copy(),
+        "BE": df_BE.copy(),
+        "DE_LU": df_DE_LU.copy(),
+        "DK_1": df_DK_1.copy(),
+        "GB": df_GB.copy(),
+        "NO_2": df_NO_2.copy(),
+    }
 
-    # 2. Rename 'Timestamp' and 'Price'
-    df_cleaned.rename(columns={'Timestamp': 'datetime', 'Price': 'energy_price'}, inplace=True)
+    # Step 1: Drop the first unnamed column if it exists
+    for country_code, df in dfs.items():
+        if df.columns[0].startswith("Unnamed"):
+            df.drop(df.columns[0], axis=1, inplace=True)
 
-    # 3. Cast columns: convert 'datetime' to UTC and 'price' to float64
-    df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
-    df_cleaned['energy_price'] = df_cleaned['energy_price'].astype('float64')
+    # Step 2: Rename 'Timestamp' -> 'datetime' and 'Price' -> 'energy_price'
+    for country_code, df in dfs.items():
+        df.rename(columns={"Timestamp": "datetime", "Price": "energy_price"}, inplace=True)
 
-    # 4. Drop rows with nans
-    df_cleaned.dropna(axis=0, how='any', inplace=True)
+    # Step 3: Add 'country_code' column
+    for country_code, df in dfs.items():
+        df["country_code"] = country_code
 
-    return df_cleaned
+    # Step 4: Concatenate all dataframes
+    df_combined = pd.concat(dfs.values(), axis=0, ignore_index=True)
+
+    # Step 5: Convert 'datetime' to UTC and 'energy_price' to float64
+    df_combined["datetime"] = pd.to_datetime(df_combined["datetime"], utc=True)
+    df_combined["energy_price"] = df_combined["energy_price"].astype("float64")
+
+    # Step 6: Drop rows with NaN values
+    df_combined.dropna(axis=0, how="any", inplace=True)
+
+    return df_combined
 
