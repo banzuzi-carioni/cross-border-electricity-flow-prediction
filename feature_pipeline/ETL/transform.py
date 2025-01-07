@@ -1,4 +1,5 @@
 import pandas as pd
+import hsfs
 
 
 def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
@@ -242,3 +243,70 @@ def transform_prices_generation(df_prices: pd.DataFrame, df_generation: pd.DataF
         how="inner"
     )
     return df_merged
+
+
+def transform_data_for_feature_view(
+    fg_weather: hsfs.feature_group.FeatureGroup, 
+    fg_prices_generation: hsfs.feature_group.FeatureGroup, 
+    fg_flow: hsfs.feature_group.FeatureGroup,
+    fs: hsfs.feature_store.FeatureStore, 
+    version: int = 1
+) -> hsfs.feature_group.FeatureGroup:
+    df_weather = fg_weather.read()
+    df_prices_generation = fg_prices_generation.read()
+    df_flow = fg_flow.read()
+
+    weather_columns = list(df_weather.columns)[1:]
+    prices_generation_columns = list(df_prices_generation.columns)[1:]
+
+    weather_pivot = _pivot_transform(df_weather, weather_columns)
+    prices_generation_pivot = _pivot_transform(df_prices_generation, prices_generation_columns)
+    prices_generation_pivot = prices_generation_pivot.infer_objects(copy=False)
+    prices_generation_pivot = prices_generation_pivot.fillna(0)
+
+    # Combine pivot dfs
+    df_combined_pivot = pd.merge(
+        weather_pivot, 
+        prices_generation_pivot,
+        on="datetime", 
+        how="inner"
+    )
+    
+    # Make a final df format
+    df_combined_full = pd.merge(
+        df_flow, 
+        df_combined_pivot,
+        on="datetime", 
+        how="right"
+    )
+
+    df_combined_full.dropna(axis=0, how='any', inplace=True)
+    df_combined_full = df_combined_full.sort_values(by='datetime', ascending=True)
+
+    # Create the Feature Group
+    model_data_fg = fs.get_or_create_feature_group(
+        name="model_data",
+        version=version,
+        description=(
+            'Cross-border electricity dataset with energy_sent as the target, combining pivoted multi-country weather, generation, and energy price features for each timestamp, along with country_from and country_to.'
+        ),
+        primary_key=["datetime", "country_from", "country_to"],
+        event_time="datetime"
+    )
+
+    model_data_fg.insert(df_combined_full, write_options={"wait_for_job": True})
+    return model_data_fg
+
+
+def _pivot_transform(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+    df_pivot = df.pivot_table(
+        index="datetime",
+        columns="country_code",
+        values=columns
+    )
+    # df pivot will have a multi-level column index like: ('temperature_2m', 'DK_1'), ('temperature_2m', 'BE'), etc.
+    df_pivot.columns = [f"{var}_{country}" for var, country in df_pivot.columns]
+
+    df_pivot.reset_index(inplace=True)
+    df_pivot = df_pivot.sort_values(by=['datetime'], ascending=True)
+    return df_pivot
