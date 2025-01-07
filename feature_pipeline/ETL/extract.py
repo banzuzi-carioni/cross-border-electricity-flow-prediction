@@ -7,8 +7,8 @@ import requests
 
 
 def extract_day_ahead_price(country_code: str,
-                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
-                            end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+                            end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
                             to_CSV: bool = True) -> Optional[pd.DataFrame]:
     '''
     Extracts day-ahead electricity prices from ENTSO-E API for a given country code.
@@ -30,8 +30,8 @@ def extract_day_ahead_price(country_code: str,
 
 # Historical 
 def extract_physical_flows(country_code: str = 'NL', 
-                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
-                           end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+                           end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
                            to_CSV: bool = True) -> Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
     '''
     Extracts physical electricity flows from ENTSO-E API for a given country code
@@ -50,14 +50,14 @@ def extract_physical_flows(country_code: str = 'NL',
 
 
 def extract_energy_generation(country_code: str, 
-                              start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
-                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                              start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
                               to_CSV: bool = True) -> Optional[pd.DataFrame]:
     '''
     Extracts energy generation data from ENTSO-E API for a given country code
     '''
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
-    generation_data = client.query_generation(country_code, start_time, end_time, psr_type=None)
+    generation_data = client.query_generation(country_code, start=start_time, end=end_time, psr_type=None)
 
     if to_CSV:
         generation_data.to_csv(f'./feature_pipeline/data/{country_code}_energy_generation.csv')
@@ -67,8 +67,8 @@ def extract_energy_generation(country_code: str,
 
 
 def extract_historical_weather_data(country_code: str,
-                         start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
-                         end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
+                         start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+                         end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
                          to_CSV: bool = True) -> pd.DataFrame:
     """
     Extracts hourly weather data from Open-Meteo's ERA5 reanalysis archive. 
@@ -130,9 +130,9 @@ def extract_historical_weather_data(country_code: str,
 
 
 # Forecasts 
-def extract_energy_generation_forecasts(country_code: str, 
-                                        start_time: pd.Timestamp = pd.Timestamp.today(tz='Europe/Amsterdam').normalize(), 
-                                        end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam')) -> pd.DataFrame:
+def extract_energy_generation_forecasts(country_code: str,
+                                        start_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1), 
+                                        end_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize()) -> Optional[pd.DataFrame]:
     '''
     Extracts future forecast data from ENTSO-E API for a given country code 
     '''
@@ -143,10 +143,10 @@ def extract_energy_generation_forecasts(country_code: str,
 
 
 def extract_weather_forecast(country_code: str,
-                             start_time: pd.Timestamp = pd.Timestamp.today(tz='Europe/Amsterdam').normalize(),
-                             end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam')) -> Optional[pd.DataFrame]:
+                             start_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1), 
+                             end_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1))-> Optional[pd.DataFrame]:
     """
-    Extracts future forecast data (hourly) from Open-Meteo's forecast endpoint. Up to 7–16 days max in the future. 
+    Extracts forecast data from Open-Meteo's forecast endpoint. Up to 7–16 days max in the future. 
         Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 
         Wind energy: surface_pressure, wind_speed_10m, wind_direction_10m, wind_speed_100m, wind_direction_100m 
         Hydro energy: precipitation, snow_depth
@@ -200,47 +200,83 @@ def extract_weather_forecast(country_code: str,
 
 
 # Multiple countries 
-def extract_weather_data(load_locally = True) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
-    if load_locally: 
+def extract_weather_data(load_locally = True, daily = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:     
+    if load_locally and not daily: 
         return pre_load_df('weather_data')
-    df_NL = extract_historical_weather_data('NL')
-    df_BE = extract_historical_weather_data('BE')
-    df_DE_LU = extract_historical_weather_data('DE_LU')
-    df_DK_1 = extract_historical_weather_data('DK_1')
-    df_GB = extract_historical_weather_data('GB')
-    df_NO_2 = extract_historical_weather_data('NO_2')
-    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
-
-
-def extract_price_data(load_locally = True) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
-    if load_locally: 
-        return pre_load_df('day_ahead_prices')
-    df_NL = extract_day_ahead_price('NL')
-    df_BE = extract_day_ahead_price('BE')
-    df_DE_LU = extract_day_ahead_price('DE_LU')
-    df_DK_1 = extract_day_ahead_price('DK_1')
-    df_GB = extract_day_ahead_price('GB')
-    df_NO_2 = extract_day_ahead_price('NO_2')
-    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
-
-
-def extract_energy_generation_data(load_locally = True) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
-    if load_locally: 
-        return pre_load_df('energy_generation')
-    df_NL = extract_energy_generation('NL')
-    df_BE = extract_energy_generation('BE')
-    df_DE_LU = extract_energy_generation('DE_LU')
-    df_DK_1 = extract_energy_generation('DK_1')
-    df_GB = extract_energy_generation('GB')
-    df_NO_2 = extract_energy_generation('NO_2')
-    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
-
-
-def extract_flow_data(load_locally: bool = True, country_code: str = 'NL') -> Tuple[pd.DataFrame, pd.DataFrame]:
-    if load_locally:
-        return pd.read_csv(f'./feature_pipeline/data/{country_code}_import_flow.csv'), pd.read_csv(f'./feature_pipeline/data/{country_code}_export_flow.csv')
+    if daily: 
+        # Extracts the weather from yesterday and today 
+        df_NL = extract_weather_forecast('NL')
+        df_BE = extract_weather_forecast('BE')
+        df_DE_LU = extract_weather_forecast('DE_LU')
+        df_DK_1 = extract_weather_forecast('DK_1')
+        df_GB = extract_weather_forecast('GB')
+        df_NO_2 = extract_weather_forecast('NO_2')
+        return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
     else:
-        return extract_physical_flows(country_code=country_code)
+        df_NL = extract_historical_weather_data('NL')
+        df_BE = extract_historical_weather_data('BE')
+        df_DE_LU = extract_historical_weather_data('DE_LU')
+        df_DK_1 = extract_historical_weather_data('DK_1')
+        df_GB = extract_historical_weather_data('GB')
+        df_NO_2 = extract_historical_weather_data('NO_2')
+        return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
+
+
+def extract_price_data(load_locally = True, daily= False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
+    if load_locally and not daily: 
+        return pre_load_df('day_ahead_prices')
+    if daily:
+        start_time = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1)
+        end_time = pd.Timestamp.today(tz='UTC').normalize()
+        to_CSV = False
+    else: 
+        start_time = pd.Timestamp('2019-01-01', tz='UTC').normalize()
+        end_time = pd.Timestamp('2025-01-05', tz='UTC').normalize()
+        to_CSV = True
+
+    df_NL = extract_day_ahead_price('NL', start_time=start_time, end_time=end_time,to_CSV=to_CSV)
+    df_BE = extract_day_ahead_price('BE', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_DE_LU = extract_day_ahead_price('DE_LU', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_DK_1 = extract_day_ahead_price('DK_1', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_GB = extract_day_ahead_price('GB', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_NO_2 = extract_day_ahead_price('NO_2', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
+
+
+def extract_energy_generation_data(load_locally = True, daily = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
+    if load_locally and not daily: 
+        return pre_load_df('energy_generation')
+    if daily: 
+        start_time = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1)
+        end_time = pd.Timestamp.today(tz='UTC').normalize()
+        to_CSV = False
+    else: 
+        start_time = pd.Timestamp('2019-01-01', tz='UTC').normalize()
+        end_time = pd.Timestamp('2025-01-05', tz='UTC').normalize()
+        to_CSV = True
+
+    df_NL = extract_energy_generation('NL', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_BE = extract_energy_generation('BE', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_DE_LU = extract_energy_generation('DE_LU', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_DK_1 = extract_energy_generation('DK_1', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_GB = extract_energy_generation('UK', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    df_NO_2 = extract_energy_generation('NO_2', start_time=start_time, end_time=end_time, to_CSV=to_CSV)
+    return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
+
+
+def extract_flow_data(load_locally: bool = True, country_code: str = 'NL', daily: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    if load_locally and not daily:
+        return pd.read_csv(f'./feature_pipeline/data/{country_code}_import_flow.csv'), pd.read_csv(f'./feature_pipeline/data/{country_code}_export_flow.csv')
+    if daily: 
+        start_time = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1)
+        end_time = pd.Timestamp.today(tz='UTC').normalize()
+        to_CSV = False
+    else: 
+        start_time = pd.Timestamp('2019-01-01', tz='UTC').normalize()
+        end_time = pd.Timestamp('2025-01-05', tz='UTC').normalize()
+        to_CSV = True
+
+    return extract_physical_flows(country_code=country_code, start_time=start_time, end_time=end_time, to_CSV=to_CSV)
 
 
 def pre_load_df(path_specific) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -256,3 +292,22 @@ def pre_load_df(path_specific) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame
     df_GB = pd.read_csv(f'./feature_pipeline/data/GB_{path_specific}.csv')
     df_NO_2 = pd.read_csv(f'./feature_pipeline/data/NO_2_{path_specific}.csv')
     return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
+
+
+def extract_backfill_data():
+    weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 =  extract_weather_data()
+    energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract_price_data()
+    generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract_energy_generation_data()
+    import_flow, export_flow = extract_flow_data()
+    return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
+          generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow
+
+
+def extract_daily_data():
+    weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 = extract_weather_data(load_locally=False, daily=True)
+    energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract_price_data(load_locally=False, daily=True)
+    generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract_energy_generation_data(load_locally=False, daily=True)
+    import_flow, export_flow = extract_flow_data(daily=True)
+     
+    return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
+          generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow

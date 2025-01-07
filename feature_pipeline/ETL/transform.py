@@ -1,9 +1,9 @@
 import pandas as pd
 
 
-def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame) -> pd.DataFrame:
-    export_data = transform_flow(export_data, export=True)
-    import_data = transform_flow(import_data, export=False)
+def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
+    export_data = transform_flow(export_data, export=True, from_api=from_api)
+    import_data = transform_flow(import_data, export=False, from_api=from_api)
     combined_data = pd.concat([export_data, import_data], ignore_index=True)
     combined_data = combined_data.sort_values(by='datetime')
     combined_data = combined_data.reset_index(drop=True)
@@ -56,6 +56,7 @@ def transform_weather_data(
     df_DK_1: pd.DataFrame,
     df_GB: pd.DataFrame,
     df_NO_2: pd.DataFrame,
+    from_api: bool = False
 ) -> pd.DataFrame:
     
     # Dictionary to map DataFrames to their country codes
@@ -67,14 +68,16 @@ def transform_weather_data(
         "GB": df_GB.copy(),
         "NO_2": df_NO_2.copy(),
     }
+    if from_api:
+        for country_code, df in dfs.items():
+            df = df.reset_index()
+            dfs[country_code] = df
 
-    # 1. Drop the first unnamed column if it exists
     for country_code, df in dfs.items():
+        # 1. Drop the first unnamed column if it exists
         if df.columns[0].startswith('Unnamed'):
             df.drop(df.columns[0], axis=1, inplace=True)
-
-    # 2. Add country code to each dataframe 
-    for country_code, df in dfs.items():
+        # 2. Add country code to each dataframe 
         df['country_code'] = country_code
     
     # 3. Concatenate the dataframes 
@@ -190,7 +193,17 @@ def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.Da
     df_cleaned = df.copy()
 
     if from_api:
-        pass
+        try:
+            df_cleaned = df_cleaned.xs(key='Actual Aggregated', axis=1, level=1)
+        except Exception:
+            pass
+        
+        df_cleaned = df_cleaned.rename(columns=lambda x: '_'.join(str(x).lower().split()))
+        df_cleaned = df_cleaned.rename(columns=lambda x: x.replace('-', '_') if '-' in x else x.replace('/', '_'))
+        df_cleaned.reset_index(inplace=True)
+        df_cleaned = df_cleaned.rename(columns={'index': 'datetime'})
+        df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
+        df_cleaned.set_index('datetime', inplace=True)
     else:
         try:
             datetimes = df.xs(key='Unnamed: 0_level_1', axis=1, level=1)

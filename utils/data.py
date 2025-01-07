@@ -12,6 +12,10 @@ NEIGHBOUR_ZONES = {
     'BE', 'DE_LU', 'GB', 'NO_2', 'DK_1'
 }
 
+ZONES = {
+    'NL', 'BE', 'DE_LU', 'GB', 'NO_2', 'DK_1'
+}
+
 # feature view creation 
 
 
