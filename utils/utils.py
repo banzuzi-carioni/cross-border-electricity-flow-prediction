@@ -1,10 +1,11 @@
 from geopy.geocoders import Nominatim
+from typing import Tuple
 
-def get_country_center_coordinates(country_code):
+
+def get_country_center_coordinates(country_code: str) -> Tuple[float, float]:
     """
     Takes country name and returns its central latitude and longitude (rounded to 2 digits after dot).
     """
-
     geolocator = Nominatim(user_agent="MyApp")
     location = geolocator.geocode(country_code)
 
@@ -14,3 +15,4 @@ def get_country_center_coordinates(country_code):
         return latitude, longitude
     else:
         raise ValueError(f"Could not find coordinates for {country_code}")
+    

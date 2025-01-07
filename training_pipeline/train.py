@@ -1,29 +1,34 @@
 import argparse
-from feature_pipeline.ETL import load
-from utils import data
-from xgboost import XGBRegressor
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error, r2_score
 import os 
 import hopsworks
+import pandas as pd
+from utils import data
 from utils.settings import ENV_VARS
 from hsml.schema import Schema
 from hsml.model_schema import ModelSchema
+from feature_pipeline.ETL import load
+from xgboost import XGBRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_error, r2_score
+from typing import Tuple
 
 
-def get_parser():
+def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', '-v', type=int, default=1, help='Version for the feature groups.')
     parser.add_argument('--hyperparameter_tuning', '-ht', default=False, action='store_true', help='Decides if hyperparametertuning is performed or not.')
-    parser.add_argument("--model_name", type=str, default='model_total_production', help='Name given when saving the model both locally and in Hopsworks.')
-    # Mutually exclusive group: backfill (-b) or daily (-d) is required
+    parser.add_argument("--model_name", type=str, default='model', help='Name given when saving the model both locally and in Hopsworks.')
+    # Mutually exclusive group:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--total_production', '-tp', action='store_true', help='Defines how many and which features are used during training. In this case only the total production of energy is used.')
     group.add_argument('--all_production', '-ap', action='store_true', help='Defines how many and which features are used during training. In this case all types of energy produced per country are considered.')
     return parser
 
 
-def get_training_data(version:int, total_production:bool):
+def get_training_data(version: int, total_production: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    '''
+    Loads the feature view from the feature store and splits the data into training and testing sets.
+    '''
     feature_store = load.get_feature_store()
 
     feature_view = feature_store.get_feature_view(
@@ -35,7 +40,10 @@ def get_training_data(version:int, total_production:bool):
     return X_train_one_hot, X_test_one_hot, y_train, y_test
 
 
-def train(hyperparameter_tuning:bool, X_train_one_hot, y_train):
+def train(hyperparameter_tuning: bool, X_train_one_hot: pd.DataFrame, y_train: pd.DataFrame) -> XGBRegressor:
+    '''
+    Trains the model using the training data.
+    '''
     # Define the model
     xgb_regressor = XGBRegressor()
     if hyperparameter_tuning:
@@ -68,7 +76,10 @@ def train(hyperparameter_tuning:bool, X_train_one_hot, y_train):
         xgb_regressor.fit(X_train_one_hot, y_train)
         return xgb_regressor
 
-def evaluate(model, x_test, y_test): 
+def evaluate(model, x_test: pd.DataFrame, y_test: pd.DataFrame) -> dict:
+    '''
+    Evaluates the model using the test data.
+    ''' 
     y_pred = model.predict(x_test)
     # Calculating Mean Squared Error (MSE) using sklearn
     mse = mean_squared_error(y_test.iloc[:,0], y_pred)
@@ -79,7 +90,19 @@ def evaluate(model, x_test, y_test):
     print("R squared:", r2)
     return {"MSE": str(mse), "R squared": str(r2)}
 
-def save_model(model, locally:bool, model_name:str, to_hopsworks:bool, results_dict:dict, X_train, y_train, X_test):
+def save_model(
+    model, 
+    locally: bool,
+    model_name: str, 
+    to_hopsworks: bool, 
+    results_dict: dict, 
+    X_train: pd.DataFrame,
+    y_train: pd.DataFrame, 
+    X_test: pd.DataFrame
+) -> None:
+    '''
+    Saves the model locally and in Hopsworks.
+    '''
     model_dir = "models"
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)

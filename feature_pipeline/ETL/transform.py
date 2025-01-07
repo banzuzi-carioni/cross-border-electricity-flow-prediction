@@ -3,6 +3,9 @@ import hsfs
 
 
 def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
+    '''
+    Merges the export and import dataframes into a single dataframe from raw data.
+    '''
     export_data = transform_flow(export_data, export=True, from_api=from_api)
     import_data = transform_flow(import_data, export=False, from_api=from_api)
     combined_data = pd.concat([export_data, import_data], ignore_index=True)
@@ -12,6 +15,9 @@ def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame, fr
 
 
 def transform_flow(df: pd.DataFrame, export: bool = True, from_api: bool = False) -> pd.DataFrame:
+    '''
+    Transforms the flow data into a clean dataframe format.
+    '''
     df_cleaned = df.copy()
 
     df_cleaned = _clean_flow_columns(df_cleaned, from_api=from_api)
@@ -36,6 +42,9 @@ def transform_flow(df: pd.DataFrame, export: bool = True, from_api: bool = False
 
 
 def _clean_flow_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
+    '''
+    Cleans the flow data columns.
+    '''
     df_cleaned = df.copy()
 
     if from_api:
@@ -59,7 +68,9 @@ def transform_weather_data(
     df_NO_2: pd.DataFrame,
     from_api: bool = False
 ) -> pd.DataFrame:
-    
+    '''
+    Transforms the weather data into a clean dataframe format.
+    '''
     # Dictionary to map DataFrames to their country codes
     dfs = {
         "NL": df_NL.copy(),
@@ -107,7 +118,9 @@ def transform_day_ahead_prices(
     df_GB: pd.DataFrame,
     df_NO_2: pd.DataFrame,
 ) -> pd.DataFrame:
-
+    '''
+    Transforms the day-ahead prices data into a clean dataframe format.
+    '''
     # Dictionary that maps the DataFrames to their country codes
     dfs = {
         "NL": df_NL.copy(),
@@ -153,7 +166,9 @@ def transform_generation_data(
     df_NO_2: pd.DataFrame, 
     from_api: bool = False
 ) -> pd.DataFrame:
-    
+    '''
+    Transforms the generation data into a clean dataframe format.
+    '''
     # Dictionary that maps the DataFrames to their country codes
     dfs = {
         "NL": df_NL.copy(),
@@ -191,6 +206,9 @@ def transform_generation_data(
 
 
 def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
+    '''
+    Cleans the generation data columns.
+    '''
     df_cleaned = df.copy()
 
     if from_api:
@@ -236,6 +254,9 @@ def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.Da
 
 
 def transform_prices_generation(df_prices: pd.DataFrame, df_generation: pd.DataFrame) -> pd.DataFrame:
+    '''
+    Merges the prices and generation dataframes into a single dataframe.
+    '''
     df_merged = pd.merge(
         df_prices, 
         df_generation, 
@@ -252,6 +273,9 @@ def transform_data_for_feature_view(
     fs: hsfs.feature_store.FeatureStore, 
     version: int = 1
 ) -> hsfs.feature_group.FeatureGroup:
+    '''
+    Transforms the data from feature groups into a format suitable for a feature view to a ML model.
+    '''
     df_weather = fg_weather.read()
     df_prices_generation = fg_prices_generation.read()
     df_flow = fg_flow.read()
@@ -299,6 +323,9 @@ def transform_data_for_feature_view(
 
 
 def _pivot_transform(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+    '''
+    Transforms the DataFrame into a pivot table format.
+    '''
     df_pivot = df.pivot_table(
         index="datetime",
         columns="country_code",

@@ -6,10 +6,12 @@ from utils.utils import get_country_center_coordinates
 import requests
 
 
-def extract_day_ahead_price(country_code: str,
-                            start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
-                            end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
-                            to_CSV: bool = True) -> Optional[pd.DataFrame]:
+def extract_day_ahead_price(
+    country_code: str,
+    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
+    to_CSV: bool = True
+) -> Optional[pd.DataFrame]:
     '''
     Extracts day-ahead electricity prices from ENTSO-E API for a given country code.
     '''
@@ -28,10 +30,12 @@ def extract_day_ahead_price(country_code: str,
     return day_ahead_prices_df
 
 
-def extract_physical_flows(country_code: str = 'NL', 
-                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
-                           end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
-                           to_CSV: bool = True) -> Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
+def extract_physical_flows(
+    country_code: str = 'NL', 
+    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
+    to_CSV: bool = True
+) -> Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
     '''
     Extracts physical electricity flows from ENTSO-E API for a given country code
     '''
@@ -48,10 +52,12 @@ def extract_physical_flows(country_code: str = 'NL',
     return import_data, export_data
 
 
-def extract_energy_generation(country_code: str, 
-                              start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
-                              end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
-                              to_CSV: bool = True) -> Optional[pd.DataFrame]:
+def extract_energy_generation(
+    country_code: str, 
+    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
+    to_CSV: bool = True
+) -> Optional[pd.DataFrame]:
     '''
     Extracts energy generation data from ENTSO-E API for a given country code
     '''
@@ -65,10 +71,12 @@ def extract_energy_generation(country_code: str,
     return generation_data
 
 
-def extract_historical_weather_data(country_code: str,
-                                    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
-                                    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
-                                    to_CSV: bool = True) -> pd.DataFrame:
+def extract_historical_weather_data(
+    country_code: str,
+    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
+    to_CSV: bool = True
+) -> pd.DataFrame:
     """
     Extracts hourly weather data from Open-Meteo's ERA5 reanalysis archive. 
         Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 
@@ -128,9 +136,11 @@ def extract_historical_weather_data(country_code: str,
     return df
 
 
-def extract_energy_generation_forecasts(country_code: str,
-                                        start_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1), 
-                                        end_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize()) -> Optional[pd.DataFrame]:
+def extract_energy_generation_forecasts(
+    country_code: str,
+    start_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1), 
+    end_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize()
+) -> Optional[pd.DataFrame]:
     '''
     Extracts future forecast data from ENTSO-E API for a given country code 
     '''
@@ -140,9 +150,11 @@ def extract_energy_generation_forecasts(country_code: str,
     return generation_forecasts
 
 
-def extract_weather_forecast(country_code: str,
-                             start_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1), 
-                             end_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1))-> Optional[pd.DataFrame]:
+def extract_weather_forecast(
+    country_code: str,
+    start_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1), 
+    end_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1)
+)-> Optional[pd.DataFrame]:
     """
     Extracts forecast data from Open-Meteo's forecast endpoint. Up to 7–16 days max in the future. 
         Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 

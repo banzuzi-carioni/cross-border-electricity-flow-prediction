@@ -15,7 +15,6 @@ def load_env_vars(root_dir: Union[str, Path]) -> dict:
     Returns:
         Dictionary with the environment variables.
     """
-
     if isinstance(root_dir, str):
         root_dir = Path(root_dir)
 
@@ -34,7 +33,6 @@ def get_root_dir(default_value: str = ".") -> Path:
     Returns:
         Path to the root directory of the project.
     """
-
     return Path(os.getenv("ML_PIPELINE_ROOT_DIR", default_value))
 
 

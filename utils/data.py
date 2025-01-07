@@ -1,14 +1,7 @@
-import os
-from datetime import datetime, timedelta
-import hsfs.feature_view
 import pandas as pd
-import matplotlib.pyplot as plt
-from xgboost import XGBRegressor
-from xgboost import plot_importance
-from sklearn.metrics import mean_squared_error, r2_score
-from feature_pipeline.ETL import load, transform
-import hopsworks
 import hsfs
+from feature_pipeline.ETL import load, transform
+from typing import Tuple
 
 
 BZN2COUNTRY = {
@@ -113,8 +106,10 @@ COLUMNS_MODEL_TOTAL_PRODUCTION = [
 ]
 
 
-def create_feature_view(version: int = 1):
-    # Connect to Hopsworks
+def create_feature_view(version: int = 1) -> hsfs.feature_view.FeatureView:
+    '''
+    Creates a feature view with the pivoted multi-country weather, generation, and energy price features for each timestamp, along with country_from and country_to.
+    '''
     feature_store = load.get_feature_store()
     
     weather_fg, prices_generation_fg, physical_flow_fg = _retrieve_feature_groups(version=version)
@@ -131,14 +126,20 @@ def create_feature_view(version: int = 1):
     return feature_view
 
 
-def _retrieve_feature_groups(version: int = 1):
+def _retrieve_feature_groups(version: int = 1) -> Tuple[hsfs.feature_group.FeatureGroup, hsfs.feature_group.FeatureGroup, hsfs.feature_group.FeatureGroup]:
+    '''
+    Retrieves the feature groups from the feature store.
+    '''
     weather_fg = load.retrieve_feature_group(name='weather_open_meteo', version=version)
     prices_generation_fg = load.retrieve_feature_group(name='prices_generation', version=version)
     physical_flow_fg = load.retrieve_feature_group(name='physical_flow', version=version)
     return weather_fg, prices_generation_fg, physical_flow_fg
 
 
-def prepare_data(X_train: pd.DataFrame, X_test: pd.DataFrame, total_production: bool):
+def prepare_data(X_train: pd.DataFrame, X_test: pd.DataFrame, total_production: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    '''
+    Prepares the data for training by removing unnecessary columns, applying one-hot encoding, and dropping the datetime column.
+    '''
     X_train_result = X_train.copy()
     X_test_result = X_test.copy()
 
@@ -164,7 +165,7 @@ def prepare_data(X_train: pd.DataFrame, X_test: pd.DataFrame, total_production: 
     return X_train_result, X_test_result
 
 
-def one_hot_encoding(df, feature, prefix=None):
+def one_hot_encoding(df, feature, prefix=None) -> pd.DataFrame:
     """
     Performs one-hot encoding on the specified feature and ensures the result is 1 and 0.
     Adds a prefix to the columns to avoid name collisions.
@@ -180,7 +181,12 @@ def one_hot_encoding(df, feature, prefix=None):
     return df_result
 
 
-def split_training_data(feature_view: hsfs.feature_view.FeatureView,
-                        test_start: pd.Timestamp = pd.Timestamp('2024-01-01', tz='UTC').normalize()):
+def split_training_data(
+    feature_view: hsfs.feature_view.FeatureView,
+    test_start: pd.Timestamp = pd.Timestamp('2024-01-01', tz='UTC').normalize()
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    '''
+    Splits the data from the feature view into training and testing datasets.
+    '''
     X_train, X_test, y_train, y_test = feature_view.train_test_split(test_start=test_start)
     return X_train, X_test, y_train, y_test

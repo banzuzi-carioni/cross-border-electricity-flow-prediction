@@ -2,7 +2,7 @@ import argparse
 from ETL import extract, load, transform 
 
 
-def get_parser():
+def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', '-v', type=int, default=1, help='Version for the feature groups.')
     # Mutually exclusive group: backfill (-b) or daily (-d) is required
@@ -12,7 +12,7 @@ def get_parser():
     return parser
 
 
-def backfill_run(version):
+def backfill_run(version: int = 1) -> None:
     """
     A ETL pipeline for weather data from multiple countries.
     1) Extracts historical weather data from Open-Meteo for each country.
@@ -45,7 +45,7 @@ def backfill_run(version):
     print("Backfill feature pipeline run complete.")
 
 
-def daily_run(version):
+def daily_run(version: int = 1) -> None:
     """
     A smaller-scale ETL pipeline for daily updates:
     1) Extracts the most recent day's weather, prices, and generation data.

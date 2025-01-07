@@ -12,6 +12,9 @@ def to_feature_store_weather(
     validation_expectation_suite: ExpectationSuite,
     feature_group_version: int
 ) -> FeatureGroup:
+    '''
+    Transforms the weather data into a Feature Group and loads it into the Feature Store.
+    '''
     # 1. Connect to Hopsworks
     feature_store = get_feature_store()
 
@@ -126,6 +129,9 @@ def to_feature_store_weather(
 
 
 def create_weather_validation_suite():
+    '''
+    Creates a Great Expectations validation suite for the weather data.
+    '''
     weather_expectation_suite = ge.core.ExpectationSuite(expectation_suite_name="weather_expectation_suite")
 
     def expect_within_value_set(col, value_set):
@@ -252,7 +258,9 @@ def to_feature_store_prices_generation(
     validation_expectation_suite: ExpectationSuite,
     feature_group_version: int
 ) -> FeatureGroup:
-
+    '''
+    Transforms the day-ahead prices and energy generation data into a Feature Group and loads it into the Feature Store.
+    '''
     # 1. Connect to Hopsworks
     feature_store = get_feature_store()
 
@@ -374,7 +382,9 @@ def to_feature_store_prices_generation(
 
 
 def create_physical_flow_validation_suite() -> ExpectationSuite:
-
+    '''
+    Creates a Great Expectations validation suite for the physical flow data.
+    '''
     physical_flow_suite = ge.core.ExpectationSuite(expectation_suite_name="import_export_suite")
 
     def expect_within_value_set(col, value_set):
@@ -417,7 +427,9 @@ def to_feature_store_physical_flow(
     validation_expectation_suite: ExpectationSuite,
     feature_group_version: int
 ) -> FeatureGroup:
-
+    '''
+    Transforms the physical flow data into a Feature Group and loads it into the Feature Store.
+    '''
     # 1. Connect to Hopsworks
     feature_store = get_feature_store()
 
@@ -475,31 +487,10 @@ def to_feature_store_physical_flow(
     return physical_flow_fg
 
 
-def to_feature_store_model_data(
-    data: pd.DataFrame,
-    feature_group_version: int
-) -> FeatureGroup:
-    # 1. Connect to Hopsworks
-    feature_store = get_feature_store()
-
-    # 2. Create (or retrieve) the Feature Group
-    model_data_fg = feature_store.get_or_create_feature_group(
-        name="model_data",
-        version=feature_group_version,
-        description=(
-            'Cross-border electricity dataset with energy_sent as the target, combining pivoted multi-country weather, generation, and energy price features for each timestamp, along with country_from and country_to.'
-      
-        ),
-        primary_key=["datetime", "country_from", "country_to"],
-        event_time="datetime",
-    )
-
-    # 3. Insert the data
-    insert_data_to_fg(data, model_data_fg)
-    return model_data_fg
-
-
 def retrieve_feature_group(name: str, version: int):
+    '''
+    Retrieves a Feature Group from the Feature Store.
+    '''
     # 1. Connect to Hopsworks
     feature_store = get_feature_store()
 
@@ -512,10 +503,16 @@ def retrieve_feature_group(name: str, version: int):
 
 
 def get_feature_store(): 
+    '''
+    Connects to the Hopsworks Feature Store.
+    '''
     project = hopsworks.login(api_key_value=ENV_VARS["HOPSWORKS"], project='cross_border_electricity')
     feature_store = project.get_feature_store()
     return feature_store
 
 
 def insert_data_to_fg(data, fg):
+    '''
+    Inserts data into a Feature Group.
+    '''
     fg.insert(data, write_options={"wait_for_job": True})
