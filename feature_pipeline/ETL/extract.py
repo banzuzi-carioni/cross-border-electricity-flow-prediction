@@ -28,7 +28,6 @@ def extract_day_ahead_price(country_code: str,
     return day_ahead_prices_df
 
 
-# Historical 
 def extract_physical_flows(country_code: str = 'NL', 
                            start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
                            end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
@@ -129,7 +128,6 @@ def extract_historical_weather_data(country_code: str,
     return df
 
 
-# Forecasts 
 def extract_energy_generation_forecasts(country_code: str,
                                         start_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize() - pd.Timedelta(days=1), 
                                         end_time: pd.Timestamp = pd.Timestamp.today(tz='UTC').normalize()) -> Optional[pd.DataFrame]:
@@ -199,8 +197,10 @@ def extract_weather_forecast(country_code: str,
     return df
 
 
-# Multiple countries 
 def extract_weather_data(load_locally = True, daily = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:     
+    """
+    Extracts weather data for multiple countries, supporting both historical data and recent daily forecasts.
+    """
     if load_locally and not daily: 
         return pre_load_df('weather_data')
     if daily: 
@@ -223,6 +223,9 @@ def extract_weather_data(load_locally = True, daily = False) -> Tuple[pd.DataFra
 
 
 def extract_price_data(load_locally = True, daily= False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
+    """
+    Retrieves day-ahead electricity prices for multiple countries, either from saved local data or API queries.
+    """
     if load_locally and not daily: 
         return pre_load_df('day_ahead_prices')
     if daily:
@@ -244,6 +247,9 @@ def extract_price_data(load_locally = True, daily= False) -> Tuple[pd.DataFrame,
 
 
 def extract_energy_generation_data(load_locally = True, daily = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
+    """
+    Collects historical energy generation data for multiple countries, with options for daily updates or local file loading.
+    """
     if load_locally and not daily: 
         return pre_load_df('energy_generation')
     if daily: 
@@ -265,6 +271,9 @@ def extract_energy_generation_data(load_locally = True, daily = False) -> Tuple[
 
 
 def extract_flow_data(load_locally: bool = True, country_code: str = 'NL', daily: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Extracts physical electricity flow data (import/export) for a specific country, supporting daily updates or historical backfills.
+    """
     if load_locally and not daily:
         return pd.read_csv(f'./feature_pipeline/data/{country_code}_import_flow.csv'), pd.read_csv(f'./feature_pipeline/data/{country_code}_export_flow.csv')
     if daily: 
@@ -280,6 +289,9 @@ def extract_flow_data(load_locally: bool = True, country_code: str = 'NL', daily
 
 
 def pre_load_df(path_specific) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Loads pre-existing data from CSV files for multiple countries, supporting both energy generation and general data pipelines.
+    """
     if path_specific == 'energy_generation':
         df_NL = pd.read_csv(f'./feature_pipeline/data/NL_{path_specific}.csv', header=[0, 1])
         df_BE = pd.read_csv(f'./feature_pipeline/data/BE_{path_specific}.csv', header=[0, 1])
@@ -295,6 +307,9 @@ def pre_load_df(path_specific) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame
 
 
 def extract_backfill_data():
+    """
+    Collects all necessary historical data (weather, prices, generation, flows) for multiple countries to backfill a feature pipeline.
+    """
     weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 =  extract_weather_data()
     energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract_price_data()
     generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract_energy_generation_data()
@@ -304,6 +319,9 @@ def extract_backfill_data():
 
 
 def extract_daily_data():
+    """
+    Fetches daily updates for weather, electricity prices, generation, and flow data, integrating them into a daily feature pipeline.
+    """
     weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 = extract_weather_data(load_locally=False, daily=True)
     energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract_price_data(load_locally=False, daily=True)
     generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract_energy_generation_data(load_locally=False, daily=True)

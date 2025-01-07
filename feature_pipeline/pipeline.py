@@ -44,6 +44,7 @@ def backfill_run(version):
 
     print("Backfill feature pipeline run complete.")
 
+
 def daily_run(version):
     """
     A smaller-scale ETL pipeline for daily updates:
@@ -90,8 +91,6 @@ def daily_run(version):
 if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
-
-
     version = args.version
     if args.backfill:
         backfill_run(args.version)
