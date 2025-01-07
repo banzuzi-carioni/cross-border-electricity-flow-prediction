@@ -7,10 +7,11 @@ from utils.settings import ENV_VARS
 from hsml.schema import Schema
 from hsml.model_schema import ModelSchema
 from feature_pipeline.ETL import load
-from xgboost import XGBRegressor
+from xgboost import XGBRegressor, plot_importance
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error, r2_score
 from typing import Tuple
+import matplotlib.pyplot as plt
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -50,10 +51,10 @@ def train(hyperparameter_tuning: bool, X_train_one_hot: pd.DataFrame, y_train: p
         # Define the hyperparameter grid
         param_grid = {
             'n_estimators': [100, 200, 300],
-            'max_depth': [3, 5, 6, 7, 10, 20],
-            'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
-            'subsample': [0.8, 0.9, 1.0],
-            'colsample_bytree': [0.8, 0.9, 1.0]
+            'max_depth': [6, 7, 10],
+            'learning_rate': [0.01, 0.1, 0.3],
+            'subsample': [0.8, 1.0],
+            'colsample_bytree': [0.8, 1.0]
         }
 
         grid_search = GridSearchCV(
@@ -76,11 +77,12 @@ def train(hyperparameter_tuning: bool, X_train_one_hot: pd.DataFrame, y_train: p
         xgb_regressor.fit(X_train_one_hot, y_train)
         return xgb_regressor
 
-def evaluate(model, x_test: pd.DataFrame, y_test: pd.DataFrame) -> dict:
+
+def evaluate(model, X_test: pd.DataFrame, y_test: pd.DataFrame) -> dict:
     '''
     Evaluates the model using the test data.
     ''' 
-    y_pred = model.predict(x_test)
+    y_pred = model.predict(X_test)
     # Calculating Mean Squared Error (MSE) using sklearn
     mse = mean_squared_error(y_test.iloc[:,0], y_pred)
     print("MSE:", mse)
@@ -89,6 +91,7 @@ def evaluate(model, x_test: pd.DataFrame, y_test: pd.DataFrame) -> dict:
     r2 = r2_score(y_test.iloc[:,0], y_pred)
     print("R squared:", r2)
     return {"MSE": str(mse), "R squared": str(r2)}
+
 
 def save_model(
     model, 
@@ -129,6 +132,29 @@ def save_model(
 
 
 
+def save_feature_importance_and_residual_plot(model, X_test: pd.DataFrame, model_name: str, num_features: int = 10) -> None:
+    '''
+    Saves the feature importance plot locally.
+    '''
+    images_dir = "models/images"
+    if not os.path.exists(images_dir):
+        os.mkdir(images_dir)
+
+    plot_importance(model, max_num_features=num_features)
+    feature_importance_path = images_dir + f'feature_importance_{model_name}.png'
+    plt.savefig(feature_importance_path)
+
+    # Residual plot
+    y_pred = model.predict(X_test)
+    residuals = y_test.iloc[:,0] - y_pred
+    plt.scatter(y_test.iloc[:,0], residuals)
+    plt.axhline(y=0, color='black', linestyle='--')
+    plt.xlabel("Actual values")
+    plt.ylabel("Residuals")
+    plt.title("Residual plot")
+    residual_plot_path = images_dir + f'residual_plot_{model_name}.png'
+    plt.savefig(residual_plot_path)
+
 
 if __name__ == "__main__":
     parser = get_parser()
@@ -162,4 +188,7 @@ if __name__ == "__main__":
         y_train=y_train,
         X_test=X_test_one_hot
     )
+    # Save the feature importance plot and residual plot
+    save_feature_importance_and_residual_plot(model, X_test_one_hot, model_name)
+
     print(f"Model saved locally and to Hopsworks with name '{model_name}'.") 
