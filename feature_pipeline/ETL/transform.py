@@ -39,15 +39,13 @@ def _clean_flow_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFram
 
     if from_api:
         df_cleaned = df_cleaned.reset_index()
-        df_cleaned = df_cleaned.rename(columns={'index': 'datetime'}, inplace=True)
+        df_cleaned = df_cleaned.rename(columns={'index': 'datetime'})
     else:
-        df_cleaned = df_cleaned.rename(columns={'Unnamed: 0': 'datetime'}, inplace=True)
+        df_cleaned = df_cleaned.rename(columns={'Unnamed: 0': 'datetime'})
     df_cleaned = df_cleaned.drop(columns=['sum'])
     df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
-    # TODO: check this
     df_cleaned = df_cleaned.infer_objects(copy=False)
     df_cleaned = df_cleaned.fillna(0)
-    # df_cleaned.dropna(axis=0, how='any', inplace=True)
     return df_cleaned
 
 
@@ -206,6 +204,7 @@ def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.Da
             df_cleaned.drop(columns='Unnamed: 0_level_0', inplace=True)
             # reformat columns
             df_cleaned = df_cleaned.rename(columns=lambda x: '_'.join(str(x).lower().split()))
+            df_cleaned = df_cleaned.rename(columns=lambda x: x.replace('-', '_') if '-' in x else x.replace('/', '_'))
         except Exception:  # DK_1, GB, NO_2
             # Drop columns containing "Consumption"
             df_cleaned = df_cleaned.drop(columns=[col for col in df_cleaned.columns if "Consumption" in str(col)])
@@ -215,6 +214,7 @@ def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.Da
             df_cleaned = df_cleaned.T.groupby(df_cleaned.columns).sum()
             df_cleaned = df_cleaned.T.rename(columns={'Unnamed: 0': 'datetime'})
             df_cleaned = df_cleaned.rename(columns=lambda x: '_'.join(str(x).lower().split()))
+            df_cleaned = df_cleaned.rename(columns=lambda x: x.replace('-', '_') if '-' in x else x.replace('/', '_'))
             df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
             df_cleaned.set_index('datetime', inplace=True)
 

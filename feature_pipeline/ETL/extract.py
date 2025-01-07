@@ -21,7 +21,7 @@ def extract_day_ahead_price(country_code: str,
     day_ahead_prices_df.columns = ['Timestamp', 'Price']
     
     if to_CSV:
-        day_ahead_prices_df.to_csv(f'../data/{country_code}_day_ahead_prices.csv')
+        day_ahead_prices_df.to_csv(f'./feature_pipeline/data/{country_code}_day_ahead_prices.csv')
         print(f'Day ahead prices successfully saved for {country_code}.')
         return 
     
@@ -41,8 +41,8 @@ def extract_physical_flows(country_code: str = 'NL',
     export_data = client.query_physical_crossborder_allborders(country_code, start_time, end_time, export=True, per_hour=True)
     
     if to_CSV:
-        import_data.to_csv(f'../data/{country_code}_import_flow.csv')
-        export_data.to_csv(f'../data/{country_code}_export_flow.csv')
+        import_data.to_csv(f'./feature_pipeline/data/{country_code}_import_flow.csv')
+        export_data.to_csv(f'./feature_pipeline/data/{country_code}_export_flow.csv')
         print(f'Import and export physcial flows successfully saved for {country_code}.')
         return 
     
@@ -60,7 +60,7 @@ def extract_energy_generation(country_code: str,
     generation_data = client.query_generation(country_code, start_time, end_time, psr_type=None)
 
     if to_CSV:
-        generation_data.to_csv(f'../data/{country_code}_energy_generation.csv')
+        generation_data.to_csv(f'./feature_pipeline/data/{country_code}_energy_generation.csv')
         print(f'Energy generation successfully saved for {country_code}.')
         return 
     return generation_data
@@ -121,7 +121,7 @@ def extract_historical_weather_data(country_code: str,
 
     # Optionally save to CSV
     if to_CSV:
-        csv_path = f"../data/{country_code}_weather_data.csv"
+        csv_path = f"./feature_pipeline/data/{country_code}_weather_data.csv"
         df.to_csv(csv_path)
         print(f"Weather data successfully saved to {csv_path}")
         return None
@@ -214,10 +214,9 @@ def extract_weather_data(load_locally = True) -> Tuple[pd.DataFrame, pd.DataFram
 
 def extract_price_data(load_locally = True) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
     if load_locally: 
-        # TODO: Belgium doesnt exist 
         return pre_load_df('day_ahead_prices')
     df_NL = extract_day_ahead_price('NL')
-    df_BE = extract_day_ahead_price('BE') # TODO: this gives error timeout! 
+    df_BE = extract_day_ahead_price('BE')
     df_DE_LU = extract_day_ahead_price('DE_LU')
     df_DK_1 = extract_day_ahead_price('DK_1')
     df_GB = extract_day_ahead_price('GB')
@@ -239,21 +238,21 @@ def extract_energy_generation_data(load_locally = True) -> Tuple[pd.DataFrame, p
 
 def extract_flow_data(load_locally: bool = True, country_code: str = 'NL') -> Tuple[pd.DataFrame, pd.DataFrame]:
     if load_locally:
-        return pd.read_csvf('../feature_pipeline/data/{country_code}_import_flow.csv'), pd.read_csv('../feature_pipeline/data/{country_code}_export_flow.csv')
+        return pd.read_csv(f'./feature_pipeline/data/{country_code}_import_flow.csv'), pd.read_csv(f'./feature_pipeline/data/{country_code}_export_flow.csv')
     else:
         return extract_physical_flows(country_code=country_code)
 
 
 def pre_load_df(path_specific) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if path_specific == 'energy_generation':
-        df_NL = pd.read_csv(f'../feature_pipeline/data/NL_{path_specific}.csv', header=[0, 1]),
-        df_BE = pd.read_csv(f'../feature_pipeline/data/BE_{path_specific}.csv', header=[0, 1]),
-        df_DE_LU = pd.read_csv(f'../feature_pipeline/data/DE_LU_{path_specific}.csv', header=[0, 1])
+        df_NL = pd.read_csv(f'./feature_pipeline/data/NL_{path_specific}.csv', header=[0, 1])
+        df_BE = pd.read_csv(f'./feature_pipeline/data/BE_{path_specific}.csv', header=[0, 1])
+        df_DE_LU = pd.read_csv(f'./feature_pipeline/data/DE_LU_{path_specific}.csv', header=[0, 1])
     else:
-        df_NL = pd.read_csv(f'../feature_pipeline/data/NL_{path_specific}.csv')
-        df_BE = pd.read_csv(f'../feature_pipeline/data/BE_{path_specific}.csv')
-        df_DE_LU = pd.read_csv(f'../feature_pipeline/data/DE_LU_{path_specific}.csv')
-    df_DK_1 = pd.read_csv(f'../feature_pipeline/data/DK_1_{path_specific}.csv')
-    df_GB = pd.read_csv(f'../feature_pipeline/data/GB_{path_specific}.csv')
-    df_NO_2 = pd.read_csv(f'../feature_pipeline/data/NO_2_{path_specific}.csv')
+        df_NL = pd.read_csv(f'./feature_pipeline/data/NL_{path_specific}.csv')
+        df_BE = pd.read_csv(f'./feature_pipeline/data/BE_{path_specific}.csv')
+        df_DE_LU = pd.read_csv(f'./feature_pipeline/data/DE_LU_{path_specific}.csv')
+    df_DK_1 = pd.read_csv(f'./feature_pipeline/data/DK_1_{path_specific}.csv')
+    df_GB = pd.read_csv(f'./feature_pipeline/data/GB_{path_specific}.csv')
+    df_NO_2 = pd.read_csv(f'./feature_pipeline/data/NO_2_{path_specific}.csv')
     return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
