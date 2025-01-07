@@ -45,18 +45,20 @@ def _clean_flow_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFram
     df_cleaned = df_cleaned.drop(columns=['sum'])
     df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
     # TODO: check this
+    df_cleaned = df_cleaned.infer_objects(copy=False)
     df_cleaned = df_cleaned.fillna(0)
     # df_cleaned.dropna(axis=0, how='any', inplace=True)
     return df_cleaned
 
 
-def transform_weather_data(df_NL: pd.DataFrame, 
-                           df_BE: pd.DataFrame,
-                           df_DE_LU: pd.DataFrame, 
-                           df_DK_1: pd.DataFrame,
-                           df_GB: pd.DataFrame,
-                           df_NO_2: pd.DataFrame,
-                           ) -> pd.DataFrame:
+def transform_weather_data(
+    df_NL: pd.DataFrame, 
+    df_BE: pd.DataFrame,
+    df_DE_LU: pd.DataFrame, 
+    df_DK_1: pd.DataFrame,
+    df_GB: pd.DataFrame,
+    df_NO_2: pd.DataFrame,
+) -> pd.DataFrame:
     
     # Dictionary to map DataFrames to their country codes
     dfs = {
@@ -139,3 +141,78 @@ def transform_day_ahead_prices(
 
     return df_combined
 
+
+def transform_generation_data(
+    df_NL: pd.DataFrame,
+    df_BE: pd.DataFrame,
+    df_DE_LU: pd.DataFrame,
+    df_DK_1: pd.DataFrame,
+    df_GB: pd.DataFrame,
+    df_NO_2: pd.DataFrame, 
+    from_api: bool = False
+) -> pd.DataFrame:
+    
+    # Dictionary that maps the DataFrames to their country codes
+    dfs = {
+        "NL": df_NL.copy(),
+        "BE": df_BE.copy(),
+        "DE_LU": df_DE_LU.copy(),
+        "DK_1": df_DK_1.copy(),
+        "GB": df_GB.copy(),
+        "NO_2": df_NO_2.copy(),
+    }
+    
+    for country_code, df in dfs.items():
+        df = _clean_generation_columns(df, from_api=from_api)    
+        # Resample the data to hourly frequency
+        df =  df.resample('h').sum()
+        df['total_generation'] = df.sum(axis=1).astype('float64')
+        df['country_code'] = country_code
+        df.reset_index(inplace=True)
+        
+        # 3. Cast columns: convert 'datetime' to UTC
+        df['datetime'] = pd.to_datetime(df['datetime'], utc=True)
+        df.dropna(axis=0, how="any", inplace=True)
+        dfs[country_code] = df
+
+    # Step 4: Concatenate all dataframes
+    df_combined = pd.concat(dfs.values(), axis=0, ignore_index=True)
+    
+    # Step 5: Convert 'datetime' to UTC and 'energy_price' to float64
+    df_combined = df_combined.sort_values(by='datetime')
+
+    # Step 6: Drop rows with NaN values
+    df_combined = df_combined.infer_objects(copy=False)
+    df_combined = df_combined.fillna(0)
+    df_combined = df_combined.reset_index(drop=True)
+    return df_combined
+
+
+def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
+    df_cleaned = df.copy()
+
+    if from_api:
+        pass
+    else:
+        try:
+            datetimes = df.xs(key='Unnamed: 0_level_1', axis=1, level=1)
+            actual_aggregated = df_cleaned.xs(key='Actual Aggregated', axis=1, level=1)
+            df_cleaned = pd.merge(datetimes, actual_aggregated, left_index=True, right_index=True)
+            # Ensure the timestamp column is in datetime format
+            df_cleaned['datetime'] = pd.to_datetime(df_cleaned['Unnamed: 0_level_0'], utc=True)  # Replace 'Unnamed: 0' with the actual column name
+            # Set the timestamp column as the index
+            df_cleaned.set_index('datetime', inplace=True)
+            # Drop the 'Unnamed: 0' column
+            df_cleaned.drop(columns='Unnamed: 0_level_0', inplace=True)
+        except Exception:  # DK_1, GB, NO_2
+            # Drop columns containing "Consumption"
+            df_cleaned = df_cleaned.drop(columns=[col for col in df_cleaned.columns if "Consumption" in str(col)])
+            # Rename columns like "('Fossil Gas', 'Actual Aggregated')" to "Fossil Gas"
+            df_cleaned = df_cleaned.rename(columns=lambda x: x.split(",")[0].strip("()'") if "Actual Aggregated" in str(x) else x)
+
+            df_cleaned = df_cleaned.T.groupby(df_cleaned.columns).sum()
+            df_cleaned = df_cleaned.T.rename(columns={'Unnamed: 0': 'datetime'})
+            df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
+            df_cleaned.set_index('datetime', inplace=True)
+
+    return df_cleaned
