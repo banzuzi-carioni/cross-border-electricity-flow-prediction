@@ -1,5 +1,16 @@
+import argparse
 from ETL import extract, load, transform 
-import pandas as pd
+
+
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', '-v', type=int, default=1, help='Version for the feature groups.')
+    # Mutually exclusive group: backfill (-b) or daily (-d) is required
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--backfill', '-b', action='store_true', help='Run backfill feature pipeline.')
+    group.add_argument('--daily', '-d', action='store_true', help='Run daily feature pipeline.')
+    return parser
+
 
 # BACKFILL 
 """
@@ -9,7 +20,7 @@ A ETL pipeline for weather data from multiple countries.
 3) Loads the combined DataFrame into the Hopsworks Feature Store.
 """
 
-def run(version):
+def backfill_run(version):
     # -------------------- EXTRACT --------------------
     weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
         generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow = extract_data()    
@@ -32,6 +43,10 @@ def run(version):
     load.to_feature_store_physical_flow(df_flow, flow_expectation_suite, version)
 
 
+def daily_run():
+    print('DAILY: NOT IMPLEMENTED')
+
+
 def extract_data():
     weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 =  extract.extract_weather_data()
     energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract.extract_price_data()
@@ -40,6 +55,15 @@ def extract_data():
     return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
           generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow
 
+
+
 if __name__ == "__main__":
-    version = 1
-    run(version)
+    parser = get_parser()
+    args = parser.parse_args()
+
+
+    version = args.version
+    if args.backfill:
+        backfill_run(args.version)
+    else:
+        daily_run()

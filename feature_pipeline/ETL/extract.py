@@ -202,7 +202,7 @@ def extract_weather_forecast(country_code: str,
 # Multiple countries 
 def extract_weather_data(load_locally = True) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
     if load_locally: 
-        return pre_load_df('energy_generation')
+        return pre_load_df('weather_data')
     df_NL = extract_historical_weather_data('NL')
     df_BE = extract_historical_weather_data('BE')
     df_DE_LU = extract_historical_weather_data('DE_LU')
