@@ -19,6 +19,8 @@ def backfill_run(version):
     2) Transforms/cleans the DataFrames into a single DataFrame.
     3) Loads the combined DataFrame into the Hopsworks Feature Store.
     """
+    print("Starting backfill feature pipeline...")
+
     # -------------------- EXTRACT --------------------
     weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
         generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow = extract.extract_backfill_data()    
@@ -40,6 +42,7 @@ def backfill_run(version):
     load.to_feature_store_prices_generation(df_prices_generation, generation_prices_expectation_suite, version) 
     load.to_feature_store_physical_flow(df_flow, flow_expectation_suite, version)
 
+    print("Backfill feature pipeline run complete.")
 
 def daily_run(version):
     """
@@ -70,15 +73,16 @@ def daily_run(version):
     df_prices_generation = transform.transform_prices_generation(df_prices, df_generation)
     df_flow = transform.merge_export_import(import_flow, export_flow, True)
 
-    # -------------------- LOAD : TODO --------------------
-    #weather_expectation_suite = load.create_weather_validation_suite()
-    #generation_prices_expectation_suite = load.create_prices_generation_validation_suite()
-    #flow_expectation_suite = load.create_physical_flow_validation_suite()
-    
+    # -------------------- LOAD --------------------
+    # Retrieve feature group
+    weather_fg = load.retrieve_feature_group(name='weather_open_meteo', version=version)
+    prices_generation_fg = load.retrieve_feature_group(name='prices_generation', version=version)
+    physical_flow_fg = load.retrieve_feature_group(name='physical_flow', version=version)
+   
     # Insert data into the feature store
-    #load.to_feature_store_weather(df_weather, weather_expectation_suite, version)
-    #load.to_feature_store_prices_generation(df_prices_generation, generation_prices_expectation_suite, version) 
-    #load.to_feature_store_physical_flow(df_flow, flow_expectation_suite, version)
+    load.insert_data_to_fg(df_weather, weather_fg)
+    load.insert_data_to_fg(df_prices_generation, prices_generation_fg)
+    load.insert_data_to_fg(df_flow, physical_flow_fg)
 
     print("Daily feature pipeline run complete.")
 

@@ -7,7 +7,7 @@ import requests
 
 
 def extract_day_ahead_price(country_code: str,
-                           start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+                            start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
                             end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
                             to_CSV: bool = True) -> Optional[pd.DataFrame]:
     '''
@@ -67,9 +67,9 @@ def extract_energy_generation(country_code: str,
 
 
 def extract_historical_weather_data(country_code: str,
-                         start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
-                         end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
-                         to_CSV: bool = True) -> pd.DataFrame:
+                                    start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='UTC').normalize(), 
+                                    end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='UTC').normalize(),
+                                    to_CSV: bool = True) -> pd.DataFrame:
     """
     Extracts hourly weather data from Open-Meteo's ERA5 reanalysis archive. 
         Solar energy: temperature_2m, cloudcover, direct_radiation, diffuse_radiation, 

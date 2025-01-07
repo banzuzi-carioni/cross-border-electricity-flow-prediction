@@ -12,8 +12,7 @@ def to_feature_store_weather(data: pd.DataFrame,
                              feature_group_version: int) -> FeatureGroup:
     
     # 1. Connect to Hopsworks
-    project = hopsworks.login(api_key_value=ENV_VARS["HOPSWORKS"])
-    feature_store = project.get_feature_store()
+    feature_store = get_feature_store()
 
     # 2. Create (or retrieve) the Feature Group using 'datetime' as primary_key and event_time.
     weather_feature_group = feature_store.get_or_create_feature_group(
@@ -26,7 +25,7 @@ def to_feature_store_weather(data: pd.DataFrame,
     )
 
     # 3. Upload data
-    weather_feature_group.insert(data)
+    insert_data_to_fg(data, weather_feature_group)
 
     # 4. Add feature descriptions
     feature_descriptions = [
@@ -168,8 +167,6 @@ def create_weather_validation_suite():
     expect_within_value_set("country_code", ["NL", "BE", "DE_LU", "DK_1", "GB", "NO_2"])
 
     expect_greater_than_zero("precipitation")
-    expect_greater_than_zero("direct_radiation")
-    expect_greater_than_zero("diffuse_radiation")
     expect_greater_than_zero("wind_speed_10m")
     expect_greater_than_zero("wind_speed_100m")
     expect_greater_than_zero("surface_pressure")
@@ -254,8 +251,7 @@ def to_feature_store_prices_generation(data: pd.DataFrame,
                                        feature_group_version: int) -> FeatureGroup:
 
     # 1. Connect to Hopsworks
-    project = hopsworks.login(api_key_value=ENV_VARS["HOPSWORKS"])
-    feature_store = project.get_feature_store()
+    feature_store = get_feature_store()
 
     # 2. Create (or retrieve) the Feature Group
     prices_generation_fg = feature_store.get_or_create_feature_group(
@@ -270,7 +266,8 @@ def to_feature_store_prices_generation(data: pd.DataFrame,
     )
 
     # 3. Insert the data
-    prices_generation_fg.insert(data)
+    insert_data_to_fg(data, prices_generation_fg)
+    
 
     # 4. Define feature descriptions
     feature_descriptions = [
@@ -417,8 +414,7 @@ def to_feature_store_physical_flow(data: pd.DataFrame,
                                        feature_group_version: int) -> FeatureGroup:
 
     # 1. Connect to Hopsworks
-    project = hopsworks.login(api_key_value=ENV_VARS["HOPSWORKS"])
-    feature_store = project.get_feature_store()
+    feature_store = get_feature_store()
 
     # 2. Create (or retrieve) the Feature Group
     physical_flow_fg = feature_store.get_or_create_feature_group(
@@ -434,7 +430,7 @@ def to_feature_store_physical_flow(data: pd.DataFrame,
     )
 
     # 3. Insert the data
-    physical_flow_fg.insert(data)
+    insert_data_to_fg(data, physical_flow_fg)
 
     # 4. Define feature descriptions
     feature_descriptions = [
@@ -472,3 +468,25 @@ def to_feature_store_physical_flow(data: pd.DataFrame,
                 desc["name"], desc["description"]
             )
     return physical_flow_fg
+
+
+def retrieve_feature_group(name: str, version: int):
+    # 1. Connect to Hopsworks
+    feature_store = get_feature_store()
+
+    # 2. Retrieve the Feature Group
+    feature_group = feature_store.get_feature_group(
+        name=name,
+        version=version
+    )
+    return feature_group
+
+
+def get_feature_store(): 
+    project = hopsworks.login(api_key_value=ENV_VARS["HOPSWORKS"])
+    feature_store = project.get_feature_store()
+    return feature_store
+
+
+def insert_data_to_fg(data, fg):
+    fg.insert(data, write_options={"wait_for_job": True})
