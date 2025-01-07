@@ -29,7 +29,7 @@ def extract_day_ahead_price(country_code: str,
 
 
 # Historical 
-def extract_physical_flows(country_code: str, 
+def extract_physical_flows(country_code: str = 'NL', 
                            start_time: pd.Timestamp = pd.Timestamp('2019-01-01', tz='Europe/Amsterdam'), 
                            end_time: pd.Timestamp = pd.Timestamp('2025-01-05', tz='Europe/Amsterdam'),
                            to_CSV: bool = True) -> Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
@@ -235,12 +235,24 @@ def extract_energy_generation_data(load_locally = True) -> Tuple[pd.DataFrame, p
     df_GB = extract_energy_generation('GB')
     df_NO_2 = extract_energy_generation('NO_2')
     return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
-    
+
+
+def extract_flow_data(load_locally: bool = True, country_code: str = 'NL') -> Tuple[pd.DataFrame, pd.DataFrame]:
+    if load_locally:
+        return pd.read_csvf('../feature_pipeline/data/{country_code}_import_flow.csv'), pd.read_csv('../feature_pipeline/data/{country_code}_export_flow.csv')
+    else:
+        return extract_physical_flows(country_code=country_code)
+
 
 def pre_load_df(path_specific) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df_NL = pd.read_csv(f'../feature_pipeline/data/NL_{path_specific}.csv')
-    df_BE = pd.read_csv(f'../feature_pipeline/data/BE_{path_specific}.csv')
-    df_DE_LU = pd.read_csv(f'../feature_pipeline/data/DE_LU_{path_specific}.csv')
+    if path_specific == 'energy_generation':
+        df_NL = pd.read_csv(f'../feature_pipeline/data/NL_{path_specific}.csv', header=[0, 1]),
+        df_BE = pd.read_csv(f'../feature_pipeline/data/BE_{path_specific}.csv', header=[0, 1]),
+        df_DE_LU = pd.read_csv(f'../feature_pipeline/data/DE_LU_{path_specific}.csv', header=[0, 1])
+    else:
+        df_NL = pd.read_csv(f'../feature_pipeline/data/NL_{path_specific}.csv')
+        df_BE = pd.read_csv(f'../feature_pipeline/data/BE_{path_specific}.csv')
+        df_DE_LU = pd.read_csv(f'../feature_pipeline/data/DE_LU_{path_specific}.csv')
     df_DK_1 = pd.read_csv(f'../feature_pipeline/data/DK_1_{path_specific}.csv')
     df_GB = pd.read_csv(f'../feature_pipeline/data/GB_{path_specific}.csv')
     df_NO_2 = pd.read_csv(f'../feature_pipeline/data/NO_2_{path_specific}.csv')

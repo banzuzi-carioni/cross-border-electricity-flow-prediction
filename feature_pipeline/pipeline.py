@@ -11,16 +11,15 @@ A ETL pipeline for weather data from multiple countries.
 
 def run():
     # -------------------- EXTRACT --------------------
-    weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract_data()    
+    weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
+        generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow = extract_data()    
 
     # -------------------- TRANSFORM --------------------
     df_weather = transform.transform_weather_data(weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2)
     df_prices = transform.transform_day_ahead_prices(energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2)
-    # TODO: generation
-    # TODO: combine prices and generation 
-
-    # TODO: export 
-    # TODO: import 
+    df_generation = transform.transform_generation_data(generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2)
+    df_prices_generation = transform.transform_prices_generation(df_prices, df_generation)
+    df_flow = transform.merge_export_import(import_flow, export_flow)
 
     # -------------------- LOAD --------------------
     weather_expectation_suite = load.create_weather_validation_suite()
@@ -38,10 +37,9 @@ def extract_data():
     weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 =  extract.extract_weather_data()
     energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract.extract_price_data()
     generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract.extract_energy_generation_data()
-    # TODO: export flow
-    # TODO: import flow 
-
-    return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2
+    import_flow, export_flow = extract.extract_flow_data()
+    return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
+          generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow
 
 if __name__ == "__main__":
     run()

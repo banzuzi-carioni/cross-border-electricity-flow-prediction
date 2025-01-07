@@ -204,6 +204,8 @@ def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.Da
             df_cleaned.set_index('datetime', inplace=True)
             # Drop the 'Unnamed: 0' column
             df_cleaned.drop(columns='Unnamed: 0_level_0', inplace=True)
+            # reformat columns
+            df_cleaned = df_cleaned.rename(columns=lambda x: '_'.join(str(x).lower().split()))
         except Exception:  # DK_1, GB, NO_2
             # Drop columns containing "Consumption"
             df_cleaned = df_cleaned.drop(columns=[col for col in df_cleaned.columns if "Consumption" in str(col)])
@@ -212,7 +214,18 @@ def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.Da
 
             df_cleaned = df_cleaned.T.groupby(df_cleaned.columns).sum()
             df_cleaned = df_cleaned.T.rename(columns={'Unnamed: 0': 'datetime'})
+            df_cleaned = df_cleaned.rename(columns=lambda x: '_'.join(str(x).lower().split()))
             df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
             df_cleaned.set_index('datetime', inplace=True)
 
     return df_cleaned
+
+
+def transform_prices_generation(df_prices: pd.DataFrame, df_generation: pd.DataFrame) -> pd.DataFrame:
+    df_merged = pd.merge(
+        df_prices, 
+        df_generation, 
+        on=["datetime", "country_code"], 
+        how="inner"
+    )
+    return df_merged
