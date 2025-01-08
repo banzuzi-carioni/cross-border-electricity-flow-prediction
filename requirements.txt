@@ -28,4 +28,4 @@ pyarrow
 python-dotenv==1.0.1
 
 # Kafka client
-confluent_kafka==1.9.3
+confluent_kafka==2.3.0
