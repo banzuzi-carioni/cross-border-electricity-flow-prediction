@@ -29,10 +29,11 @@ jobs:
 
       - name: execute python workflows from bash script
         env:
-          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS: ${{ secrets.HOPSWORKS_API_KEY }}
         run: |
           python feature_pipeline/pipeline.py -d -v 1
-      
+          python inference_pipeline/inference.py -v 1
+
       - name: commit generated predictions
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
