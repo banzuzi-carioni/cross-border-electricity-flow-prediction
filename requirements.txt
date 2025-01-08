@@ -26,3 +26,6 @@ jupyter
 nbconvert
 pyarrow
 python-dotenv==1.0.1
+
+# Kafka client
+confluent_kafka==1.9.3
