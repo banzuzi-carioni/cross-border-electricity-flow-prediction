@@ -25,7 +25,8 @@ This project has the following architecture chosen for scalability, automation a
   - Apply filters and interact with data.
   - Export the daily predictions as `csv`. 
 
-TODO: add diagram 
+![diagram3](https://github.com/user-attachments/assets/e3720e5e-479f-4ed6-b735-285baff1a66f)
+
 
 ## Pipelines
 For this project, we prioritized clear organization and scalability, structuring it into three distinct pipelines:
