@@ -31,6 +31,7 @@ jobs:
         env:
           HOPSWORKS: ${{ secrets.HOPSWORKS_API_KEY }}
         run: |
+          export PYTHONPATH=$(pwd)
           python feature_pipeline/pipeline.py -d -v 1
           python inference_pipeline/inference.py -v 1
 

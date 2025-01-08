@@ -20,6 +20,8 @@ scikit-learn==1.4.1.post1
 matplotlib==3.8.3
 streamlit==1.41.1
 
+# Others
 jupyter
 nbconvert
 pyarrow
+python-dotenv==1.0.1
