@@ -1,174 +1,25 @@
-aiomysql==0.2.0
-altair==4.2.2
-annotated-types==0.7.0
-anyio==4.6.2.post1
-appnope
-argon2-cffi==23.1.0
-argon2-cffi-bindings==21.2.0
-arrow==1.3.0
-asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1698341106958/work
-async-lru==2.0.4
-attrs==24.2.0
-avro==1.11.3
-babel==2.16.0
-beautifulsoup4==4.12.3
-bleach==6.2.0
-boto3==1.35.55
-botocore==1.35.55
-cattrs==24.1.2
-certifi==2024.8.30
-cffi==1.17.1
-charset-normalizer==3.4.0
-click==8.1.7
-colorama==0.4.6
-comm @ file:///home/conda/feedstock_root/build_artifacts/comm_1710320294760/work
-confluent-kafka==2.3.0
-contourpy==1.3.0
-cryptography==43.0.3
-cycler==0.12.1
-debugpy @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_563_nwtkoc/croot/debugpy_1690905063850/work
-decorator @ file:///home/conda/feedstock_root/build_artifacts/decorator_1641555617451/work
-defusedxml==0.7.1
-entrypoints==0.4
-entsoe-py==0.6.16
-exceptiongroup @ file:///home/conda/feedstock_root/build_artifacts/exceptiongroup_1720869315914/work
-executing @ file:///home/conda/feedstock_root/build_artifacts/executing_1725214404607/work
-fastavro==1.8.4
-fastjsonschema==2.20.0
-flatbuffers==24.3.25
-fonttools==4.54.1
-fqdn==1.5.1
-fsspec==2024.10.0
-furl==2.1.3
-future==1.0.0
-geographiclib==2.0
-geopy==2.4.1
-great-expectations==0.18.12
-grpcio==1.69.0
-h11==0.14.0
+# Feature store and model registry
 hopsworks==4.1.4
-hopsworks-aiomysql==0.2.1
-hsfs==3.7.9
-hsml==3.7.1
-httpcore==1.0.6
-httpx==0.27.2
-idna==3.10
-importlib_metadata @ file:///home/conda/feedstock_root/build_artifacts/importlib-metadata_1726082825846/work
-ipykernel @ file:///Users/runner/miniforge3/conda-bld/ipykernel_1719845458456/work
-ipython @ file:///home/conda/feedstock_root/build_artifacts/ipython_1729866374957/work
-ipywidgets==8.1.5
-isoduration==20.11.0
-javaobj-py3==0.4.4
-jedi @ file:///home/conda/feedstock_root/build_artifacts/jedi_1696326070614/work
-Jinja2==3.1.4
-jmespath==1.0.1
-joblib==1.4.2
-json5==0.9.25
-jsonpatch==1.33
-jsonpointer==3.0.0
-jsonschema==4.23.0
-jsonschema-specifications==2024.10.1
-jupyter-events==0.10.0
-jupyter-lsp==2.2.5
-jupyter_client @ file:///home/conda/feedstock_root/build_artifacts/jupyter_client_1726610684920/work
-jupyter_core @ file:///home/conda/feedstock_root/build_artifacts/jupyter_core_1727163409502/work
-jupyter_server==2.14.2
-jupyter_server_terminals==0.5.3
-jupyterlab==4.2.5
-jupyterlab_pygments==0.3.0
-jupyterlab_server==2.27.3
-jupyterlab_widgets==3.0.13
-kiwisolver==1.4.7
-makefun==1.15.6
-MarkupSafe==3.0.2
-marshmallow==3.23.1
-matplotlib==3.8.3
-matplotlib-inline @ file:///home/conda/feedstock_root/build_artifacts/matplotlib-inline_1713250518406/work
-mistune==3.0.2
-mock==5.1.0
-nbclient==0.10.0
-nbconvert==7.16.4
-nbformat==5.10.4
-nest_asyncio @ file:///home/conda/feedstock_root/build_artifacts/nest-asyncio_1705850609492/work
-notebook==7.2.2
-notebook_shim==0.2.4
-numpy==1.26.4
-openmeteo_requests==1.3.0
-openmeteo_sdk==1.18.0
-opensearch-py==2.4.2
-orderedmultidict==1.0.1
-overrides==7.7.0
-packaging @ file:///home/conda/feedstock_root/build_artifacts/packaging_1718189413536/work
-pandas==2.2.3
-pandocfilters==1.5.1
-parso @ file:///home/conda/feedstock_root/build_artifacts/parso_1712320355065/work
-pexpect @ file:///home/conda/feedstock_root/build_artifacts/pexpect_1706113125309/work
-pickleshare @ file:///home/conda/feedstock_root/build_artifacts/pickleshare_1602536217715/work
-pillow==11.0.0
-platformdirs @ file:///home/conda/feedstock_root/build_artifacts/platformdirs_1726613481435/work
-prometheus_client==0.21.0
-prompt_toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolkit_1727341649933/work
-protobuf==4.25.5
-psutil @ file:///Users/cbousseau/work/recipes/ci_py311_2/psutil_1678995687212/work
-ptyprocess @ file:///home/conda/feedstock_root/build_artifacts/ptyprocess_1609419310487/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
-pure_eval @ file:///home/conda/feedstock_root/build_artifacts/pure_eval_1721585709575/work
-pyarrow==18.0.0
-pyasn1==0.6.1
-pyasn1_modules==0.4.1
-pycparser==2.22
-pycryptodomex==3.21.0
-pydantic==2.9.2
-pydantic_core==2.23.4
-Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1714846767233/work
-PyHopsHive==0.6.4.1.dev0
-pyhumps==1.6.1
-pyjks==20.0.0
-PyMySQL==1.1.1
-pyparsing==3.2.0
-python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1709299778482/work
-python-dotenv==1.0.1
-python-json-logger==2.0.7
-pytz==2024.2
-PyYAML==6.0.2
-pyzmq @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_43pxpbos3z/croot/pyzmq_1705605108344/work
-referencing==0.35.1
-requests==2.32.3
+
+# Resolve city names from (longitude, latitude) coordinates
+geopy==2.4.1
+
+# API: weather and energy
+openmeteo-requests
+entsoe-py==0.5.12
+
+# Be more efficient when making REST (Http) requests
 requests-cache==1.2.0
 retry-requests==2.0.0
-retrying==1.3.4
-rfc3339-validator==0.1.4
-rfc3986-validator==0.1.1
-rpds-py==0.21.0
-ruamel.yaml==0.17.17
-s3transfer==0.10.3
-scikit-learn==1.4.1.post1
-scipy==1.14.1
-Send2Trash==1.8.3
-six @ file:///home/conda/feedstock_root/build_artifacts/six_1620240208055/work
-sniffio==1.3.1
-soupsieve==2.6
-SQLAlchemy==1.4.48
-stack-data @ file:///home/conda/feedstock_root/build_artifacts/stack_data_1669632077133/work
-terminado==0.18.1
-threadpoolctl==3.5.0
-thrift==0.21.0
-tinycss2==1.4.0
-toolz==1.0.0
-tornado @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_a4w03z48br/croot/tornado_1718740114858/work
-tqdm==4.67.0
-traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1713535121073/work
-twofish==0.3.0
-types-python-dateutil==2.9.0.20241003
-typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/typing_extensions_1717802530399/work
-tzdata==2024.2
-tzlocal==5.2
-uri-template==1.3.0
-url-normalize==1.4.3
-urllib3==2.2.3
-wcwidth @ file:///home/conda/feedstock_root/build_artifacts/wcwidth_1704731205417/work
-webcolors==24.8.0
-webencodings==0.5.1
-websocket-client==1.8.0
-widgetsnbextension==4.0.13
+
+# ML framework libraries
 xgboost==2.0.3
-zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1726248574750/work
+scikit-learn==1.4.1.post1
+
+# Visuals
+matplotlib==3.8.3
+streamlit==1.41.1
+
+jupyter
+nbconvert
+pyarrow
