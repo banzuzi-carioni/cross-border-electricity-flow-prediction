@@ -16,7 +16,7 @@ def extract_day_ahead_price(
     Extracts day-ahead electricity prices from ENTSO-E API for a given country code.
     '''
     client = EntsoePandasClient(api_key=ENV_VARS['EntsoePandasClient'])
-    day_ahead_prices = client.query_day_ahead_prices('NL', start_time, end_time)
+    day_ahead_prices = client.query_day_ahead_prices('NL', start=start_time, end=end_time)
     
     # convert the series to a DataFrame
     day_ahead_prices_df = day_ahead_prices.reset_index()
