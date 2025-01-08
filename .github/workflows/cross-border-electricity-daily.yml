@@ -22,6 +22,12 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
+
+      - name: install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librdkafka-dev build-essential
+
       - name: install python packages
         run: |
           python -m pip install --upgrade pip
