@@ -2,8 +2,8 @@ name: cross-border-electricity-daily
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '00 00 * * *'
+  schedule:
+    - cron: '05 00 * * *'
 
 jobs:
   schedule_pipelines:
