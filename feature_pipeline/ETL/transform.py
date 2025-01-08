@@ -1,5 +1,6 @@
 import pandas as pd
 import hsfs
+from typing import Optional
 
 
 def merge_export_import(export_data: pd.DataFrame, import_data: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
@@ -205,6 +206,49 @@ def transform_generation_data(
     return df_combined
 
 
+def transform_generation_forecast_data(
+    df_NL: pd.DataFrame,
+    df_BE: pd.DataFrame,
+    df_DE_LU: pd.DataFrame,
+    df_DK_1: pd.DataFrame,
+    df_NO_2: pd.DataFrame
+) -> pd.DataFrame:
+    '''
+    Transforms the generation data into a clean dataframe format.
+    '''
+    # Dictionary that maps the DataFrames to their country codes
+    dfs = {
+        "NL": df_NL.copy(),
+        "BE": df_BE.copy(),
+        "DE_LU": df_DE_LU.copy(),
+        "DK_1": df_DK_1.copy(),
+        "NO_2": df_NO_2.copy(),
+    }
+    
+    for country_code, df in dfs.items():
+        # Resample the data to hourly frequency
+        df =  df.resample('h').sum()
+        df.reset_index(inplace=True)
+        df['total_generation'] = df['Actual Aggregated'].astype('float64')
+        df['datetime'] = pd.to_datetime(df['index'], utc=True)
+        df['country_code'] = country_code
+        df = df.drop(columns=['index', 'Actual Aggregated'])
+        df.dropna(axis=0, how="any", inplace=True)
+        dfs[country_code] = df
+
+    # Step 4: Concatenate all dataframes
+    df_combined = pd.concat(dfs.values(), axis=0, ignore_index=True)
+    
+    # Step 5: Convert 'datetime' to UTC
+    df_combined = df_combined.sort_values(by='datetime')
+
+    # Step 6: Drop rows with NaN values
+    df_combined = df_combined.infer_objects(copy=False)
+    df_combined = df_combined.fillna(0)
+    df_combined = df_combined.reset_index(drop=True)
+    return df_combined
+
+
 def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.DataFrame:
     '''
     Cleans the generation data columns.
@@ -249,7 +293,6 @@ def _clean_generation_columns(df: pd.DataFrame, from_api: bool = False) -> pd.Da
             df_cleaned = df_cleaned.rename(columns=lambda x: x.replace('-', '_') if '-' in x else x.replace('/', '_'))
             df_cleaned['datetime'] = pd.to_datetime(df_cleaned['datetime'], utc=True)
             df_cleaned.set_index('datetime', inplace=True)
-
     return df_cleaned
 
 
@@ -280,6 +323,31 @@ def transform_data_for_feature_view(
     df_prices_generation = fg_prices_generation.read()
     df_flow = fg_flow.read()
 
+    df_combined_full =  transform_model_data_from_df(df_weather, df_prices_generation, df_flow)
+
+    # Create the Feature Group
+    model_data_fg = fs.get_or_create_feature_group(
+        name="model_data",
+        version=version,
+        description=(
+            'Cross-border electricity dataset with energy_sent as the target, combining pivoted multi-country weather, generation, and energy price features for each timestamp, along with country_from and country_to.'
+        ),
+        primary_key=["datetime", "country_from", "country_to"],
+        event_time="datetime"
+    )
+
+    model_data_fg.insert(df_combined_full, write_options={"wait_for_job": True})
+    return model_data_fg
+
+
+def transform_model_data_from_df(
+    df_weather: pd.DataFrame, 
+    df_prices_generation: pd.DataFrame,
+    df_flow: Optional[pd.DataFrame] = None
+) -> pd.DataFrame:
+    '''
+    Transforms the data from dataframes into a format suitable for a feature view to a ML model.
+    '''
     weather_columns = list(df_weather.columns)[1:]
     prices_generation_columns = list(df_prices_generation.columns)[1:]
 
@@ -296,30 +364,21 @@ def transform_data_for_feature_view(
         how="inner"
     )
     
-    # Make a final df format
-    df_combined_full = pd.merge(
-        df_flow, 
-        df_combined_pivot,
-        on="datetime", 
-        how="right"
-    )
+    if df_flow is not None:
+        # Make a final df format
+        df_combined_full = pd.merge(
+            df_flow, 
+            df_combined_pivot,
+            on="datetime", 
+            how="right"
+        )
+    else:
+        df_combined_full = df_combined_pivot
 
     df_combined_full.dropna(axis=0, how='any', inplace=True)
     df_combined_full = df_combined_full.sort_values(by='datetime', ascending=True)
-
-    # Create the Feature Group
-    model_data_fg = fs.get_or_create_feature_group(
-        name="model_data",
-        version=version,
-        description=(
-            'Cross-border electricity dataset with energy_sent as the target, combining pivoted multi-country weather, generation, and energy price features for each timestamp, along with country_from and country_to.'
-        ),
-        primary_key=["datetime", "country_from", "country_to"],
-        event_time="datetime"
-    )
-
-    model_data_fg.insert(df_combined_full, write_options={"wait_for_job": True})
-    return model_data_fg
+    df_combined_full = df_combined_full.rename(columns=lambda x: x.lower())
+    return df_combined_full
 
 
 def _pivot_transform(df: pd.DataFrame, columns: list) -> pd.DataFrame:

@@ -9,6 +9,7 @@ def get_parser() -> argparse.ArgumentParser:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--backfill', '-b', action='store_true', help='Run backfill feature pipeline.')
     group.add_argument('--daily', '-d', action='store_true', help='Run daily feature pipeline.')
+    group.add_argument('--forecast', '-f', action='store_true', help='Run daily feature forecast pipeline.')
     return parser
 
 
@@ -63,29 +64,63 @@ def daily_run(version: int = 1) -> None:
 
     # -------------------- TRANSFORM --------------------
     df_weather = transform.transform_weather_data(
-        weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, from_api= True
+        weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, from_api=True
     )
     df_prices = transform.transform_day_ahead_prices(
         energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2
     )
     df_generation = transform.transform_generation_data(
-        generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, True
+        generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, from_api=True
     )
     df_prices_generation = transform.transform_prices_generation(df_prices, df_generation)
-    df_flow = transform.merge_export_import(import_flow, export_flow, True)
-
+    df_flow = transform.merge_export_import(import_flow, export_flow, from_api=True)
+    df_model_data = transform.transform_model_data_from_df(df_weather, df_prices_generation , df_flow)
+    
     # -------------------- LOAD --------------------
     # Retrieve feature group
     weather_fg = load.retrieve_feature_group(name='weather_open_meteo', version=version)
     prices_generation_fg = load.retrieve_feature_group(name='prices_generation', version=version)
     physical_flow_fg = load.retrieve_feature_group(name='physical_flow', version=version)
+    model_data_fg = load.retrieve_feature_group(name='model_data', version=version)
    
     # Insert data into the feature store
     load.insert_data_to_fg(df_weather, weather_fg)
     load.insert_data_to_fg(df_prices_generation, prices_generation_fg)
     load.insert_data_to_fg(df_flow, physical_flow_fg)
+    load.insert_data_to_fg(df_model_data, model_data_fg)
 
     print("Daily feature pipeline run complete.")
+
+
+def daily_forecast_run(version: int = 1) -> None:
+    """
+    A smaller-scale ETL pipeline for daily updates:
+    1) Extracts the most recent day's weather, prices, and generation data.
+    2) Transforms them into consistent DataFrames.
+    3) Loads/appends them into the same feature store groups as the backfill (same version).
+    """
+    print("Starting daily feature forecast pipeline...")
+
+    # -------------------- EXTRACT --------------------
+    # Example: these could be partial or near real-time extracts for the "current" day
+    weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, \
+        energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, \
+        generation_NL, generation_BE, generation_DE_LU, generation_DK_1, _, generation_NO_2 = extract.extract_daily_data(forecast=True)
+
+    # -------------------- TRANSFORM --------------------
+    df_weather = transform.transform_weather_data(
+        weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, from_api=True
+    )
+    df_prices = transform.transform_day_ahead_prices(
+        energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2
+    )
+    df_generation = transform.transform_generation_forecast_data(
+        generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_NO_2
+    )
+    df_prices_generation = transform.transform_prices_generation(df_prices, df_generation)
+    df_forecast_data = transform.transform_model_data_from_df(df_weather, df_prices_generation, None)
+    print("Daily feature forecast pipeline run complete.")
+    return df_forecast_data
 
 
 if __name__ == "__main__":
@@ -94,5 +129,8 @@ if __name__ == "__main__":
     version = args.version
     if args.backfill:
         backfill_run(args.version)
+    elif args.forecast:
+        daily_forecast_run(args.version)
     else:
         daily_run(args.version)
+        

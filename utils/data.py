@@ -106,36 +106,6 @@ COLUMNS_MODEL_TOTAL_PRODUCTION = [
 ]
 
 
-def create_feature_view(version: int = 1) -> hsfs.feature_view.FeatureView:
-    '''
-    Creates a feature view with the pivoted multi-country weather, generation, and energy price features for each timestamp, along with country_from and country_to.
-    '''
-    feature_store = load.get_feature_store()
-    
-    weather_fg, prices_generation_fg, physical_flow_fg = _retrieve_feature_groups(version=version)
-    restructured_fg = transform.transform_data_for_feature_view(weather_fg, prices_generation_fg, physical_flow_fg, feature_store, version)
-    selected_features = restructured_fg.select_all()
-
-    feature_view = feature_store.create_feature_view(
-        name='cross_border_electricity_fv',
-        description='Cross-border electricity dataset with energy_sent as the target, combining pivoted multi-country weather, generation, and energy price features for each timestamp, along with country_from and country_to.',
-        version=version,
-        labels=['energy_sent'],
-        query=selected_features
-    )
-    return feature_view
-
-
-def _retrieve_feature_groups(version: int = 1) -> Tuple[hsfs.feature_group.FeatureGroup, hsfs.feature_group.FeatureGroup, hsfs.feature_group.FeatureGroup]:
-    '''
-    Retrieves the feature groups from the feature store.
-    '''
-    weather_fg = load.retrieve_feature_group(name='weather_open_meteo', version=version)
-    prices_generation_fg = load.retrieve_feature_group(name='prices_generation', version=version)
-    physical_flow_fg = load.retrieve_feature_group(name='physical_flow', version=version)
-    return weather_fg, prices_generation_fg, physical_flow_fg
-
-
 def prepare_data(X_train: pd.DataFrame, X_test: pd.DataFrame, total_production: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
     '''
     Prepares the data for training by removing unnecessary columns, applying one-hot encoding, and dropping the datetime column.

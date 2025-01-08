@@ -2,7 +2,7 @@ import argparse
 import os 
 import hopsworks
 import pandas as pd
-from utils import data
+from utils import data, utils
 from utils.settings import ENV_VARS
 from hsml.schema import Schema
 from hsml.model_schema import ModelSchema
@@ -18,7 +18,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', '-v', type=int, default=1, help='Version for the feature groups.')
     parser.add_argument('--hyperparameter_tuning', '-ht', default=False, action='store_true', help='Decides if hyperparametertuning is performed or not.')
-    parser.add_argument("--model_name", type=str, default='model', help='Name given when saving the model both locally and in Hopsworks.')
+    parser.add_argument("--model_name", type=str, default='model_all_production_2', help='Name given when saving the model both locally and in Hopsworks.')
     # Mutually exclusive group:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--total_production', '-tp', action='store_true', help='Defines how many and which features are used during training. In this case only the total production of energy is used.')
@@ -26,16 +26,19 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_training_data(version: int, total_production: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def get_training_data(version: int, total_production: bool, create_feature_view: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     '''
     Loads the feature view from the feature store and splits the data into training and testing sets.
     '''
     feature_store = load.get_feature_store()
 
-    feature_view = feature_store.get_feature_view(
-        name = 'cross_border_electricity_fv',
-        version = version
-    )
+    if create_feature_view:
+        feature_view = utils.create_feature_view(version)
+    else:
+        feature_view = feature_store.get_feature_view(
+            name = 'cross_border_electricity_fv',
+            version = version
+        )
     X_train, X_test, y_train, y_test = data.split_training_data(feature_view)
     X_train_one_hot, X_test_one_hot = data.prepare_data(X_train, X_test, total_production) 
     return X_train_one_hot, X_test_one_hot, y_train, y_test

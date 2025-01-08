@@ -282,7 +282,7 @@ def extract_energy_generation_data(load_locally = True, daily = False, forecast 
     df_BE = extract_energy_generation('BE', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
     df_DE_LU = extract_energy_generation('DE_LU', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
     df_DK_1 = extract_energy_generation('DK_1', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
-    df_GB = extract_energy_generation('UK', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast) if forecast else None
+    df_GB = extract_energy_generation('UK', start_time=start_time, end_time=end_time, to_CSV=to_CSV) if not forecast else None
     df_NO_2 = extract_energy_generation('NO_2', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
     return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
 
@@ -342,8 +342,12 @@ def extract_daily_data(forecast = False):
     weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2 = extract_weather_data(load_locally=False, daily=True, forecast=forecast)
     energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2 = extract_price_data(load_locally=False, daily=True, forecast=forecast)
     generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2 = extract_energy_generation_data(load_locally=False, daily=True, forecast=forecast)
+    
+    if forecast:
+        return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
+            generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2
+
     import_flow, export_flow = extract_flow_data(daily=True) # target, so not possible to forecast 
-     
     return weather_NL, weather_BE, weather_DE_LU, weather_DK_1, weather_GB, weather_NO_2, energy_price_NL, energy_price_BE, energy_price_DE_LU, energy_price_DK_1, energy_price_GB, energy_price_NO_2, generation_NL,\
           generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow
 
