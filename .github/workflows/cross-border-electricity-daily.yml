@@ -1,0 +1,42 @@
+name: cross-border-electricity-daily
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '00 00 * * *'
+
+jobs:
+  schedule_pipelines:
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      contents: write
+
+    steps:
+      - name: checkout repo content
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: install python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: execute python workflows from bash script
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+        run: |
+          python feature_pipeline/pipeline.py -d -v 1
+      
+      - name: commit generated predictions
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Daily cross-border electricity predictions"
+          commit_options: '--no-verify --signoff'
+          file_pattern: 'inference_pipeline/predictions/*'
+          repository: .
