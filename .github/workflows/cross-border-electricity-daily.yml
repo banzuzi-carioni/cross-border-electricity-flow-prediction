@@ -30,6 +30,7 @@ jobs:
       - name: execute python workflows from bash script
         env:
           HOPSWORKS: ${{ secrets.HOPSWORKS_API_KEY }}
+          EntsoePandasClient: ${{ secrets.ENTSOEPANDASCLIENT }}
         run: |
           export PYTHONPATH=$(pwd)
           python feature_pipeline/pipeline.py -d -v 1
