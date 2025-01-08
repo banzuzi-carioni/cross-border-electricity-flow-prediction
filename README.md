@@ -5,6 +5,11 @@ This project provides an interactive tool to predict, monitor and analyze the di
 
 Developed as part of the Final Project of the course [ID2223 Scalable Machine Learning and Deep Learning](https://www.kth.se/student/kurser/kurs/ID2223?l=en) at KTH, this project aimed to build and deploy a maintainable Machine Learning system capable of seamlessly generating and updating daily predictions.
 
+<div align="center">
+    <img src="https://github.com/user-attachments/assets/2dcd151a-ee02-4da6-9e90-d910c9f1b7f0" width="800" />
+</div>
+
+
 ## Table of Contents
 1. [Architecture and Frameworks](#architecture-and-frameworks)
 2. [Pipelines](#pipelines)
