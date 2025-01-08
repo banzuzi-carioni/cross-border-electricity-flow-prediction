@@ -138,22 +138,26 @@ def save_feature_importance_and_residual_plot(model, X_test: pd.DataFrame, model
     '''
     images_dir = "models/images"
     if not os.path.exists(images_dir):
-        os.mkdir(images_dir)
+        os.makedirs(images_dir)
 
+    # Feature importance plot
     plot_importance(model, max_num_features=num_features)
-    feature_importance_path = images_dir + f'feature_importance_{model_name}.png'
+    feature_importance_path = os.path.join(images_dir, f'feature_importance_{model_name}.png')
     plt.savefig(feature_importance_path)
+    plt.clf()  # Clear the figure for the next plot
 
     # Residual plot
+    plt.figure(figsize=(10, 6))
     y_pred = model.predict(X_test)
-    residuals = y_test.iloc[:,0] - y_pred
-    plt.scatter(y_test.iloc[:,0], residuals)
+    residuals = y_test.iloc[:, 0] - y_pred
+    plt.scatter(y_test.iloc[:, 0], residuals)
     plt.axhline(y=0, color='black', linestyle='--')
     plt.xlabel("Actual values")
     plt.ylabel("Residuals")
     plt.title("Residual plot")
-    residual_plot_path = images_dir + f'residual_plot_{model_name}.png'
+    residual_plot_path = os.path.join(images_dir, f'residual_plot_{model_name}.png')
     plt.savefig(residual_plot_path)
+    plt.clf()
 
 
 if __name__ == "__main__":
