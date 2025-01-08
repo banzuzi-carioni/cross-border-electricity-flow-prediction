@@ -5,21 +5,21 @@ from utils.settings import ENV_VARS
 from feature_pipeline.ETL import load, transform
 import hsfs
 
+COUTRY_TO_COORDS = {
+    'NL': (52.25, 5.54),
+    'GB': (54.7, -3.28),
+    'NO_2': (61.15, 8.79),
+    'DK_1': (55.67, 10.33),
+    'DE_LU': (50.93, 6.94),
+    'BE': (50.64, 4.67)
+}
 
-def get_country_center_coordinates(country_code: str) -> Tuple[float, float]:
+def get_country_center_coordinates(country_code: str):
     """
-    Takes country name and returns its central latitude and longitude (rounded to 2 digits after dot).
+    Takes city name and returns its latitude and longitude (rounded to 2 digits after dot).
     """
-    geolocator = Nominatim(user_agent="MyApp")
-    location = geolocator.geocode(country_code)
-
-    if location:
-        latitude = round(location.latitude, 2)
-        longitude = round(location.longitude, 2)
-        return latitude, longitude
-    else:
-        raise ValueError(f"Could not find coordinates for {country_code}")
-    
+    latitude, longitude = COUTRY_TO_COORDS.get(country_code, (0, 0))
+    return longitude, latitude
 
 def get_model_registry(model_name: str = 'model', version: int = 1) -> str:
     '''
