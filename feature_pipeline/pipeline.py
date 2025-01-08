@@ -1,5 +1,6 @@
 import argparse
-from ETL import extract, load, transform 
+from .ETL import extract, load, transform 
+import pandas as pd
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -94,7 +95,7 @@ def daily_run(version: int = 1) -> None:
 
 def daily_forecast_run(version: int = 1) -> None:
     """
-    A smaller-scale ETL pipeline for daily updates:
+    A smaller-scale ETL pipeline for daily predictions:
     1) Extracts the most recent day's weather, prices, and generation data.
     2) Transforms them into consistent DataFrames.
     3) Loads/appends them into the same feature store groups as the backfill (same version).
@@ -117,6 +118,15 @@ def daily_forecast_run(version: int = 1) -> None:
     df_generation = transform.transform_generation_forecast_data(
         generation_NL, generation_BE, generation_DE_LU, generation_DK_1, generation_NO_2
     )
+
+    # No forecast data for GB, so we need to add rows with 0 total generation
+    for time in df_generation['datetime'].unique():
+        # Concatenate the new row
+        new_row = pd.DataFrame({'total_generation': [0], 'datetime': [time], 'country_code': ['GB']})
+        df_generation = pd.concat([df_generation, new_row], ignore_index=True)
+
+    df_generation = df_generation.sort_values(by='datetime', ascending=True)
+    
     df_prices_generation = transform.transform_prices_generation(df_prices, df_generation)
     df_forecast_data = transform.transform_model_data_from_df(df_weather, df_prices_generation, None)
     print("Daily feature forecast pipeline run complete.")

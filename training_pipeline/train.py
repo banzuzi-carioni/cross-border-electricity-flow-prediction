@@ -40,7 +40,7 @@ def get_training_data(version: int, total_production: bool, create_feature_view:
             version = version
         )
     X_train, X_test, y_train, y_test = data.split_training_data(feature_view)
-    X_train_one_hot, X_test_one_hot = data.prepare_data(X_train, X_test, total_production) 
+    X_train_one_hot, X_test_one_hot = data.prepare_data_for_training(X_train, X_test, total_production) 
     return X_train_one_hot, X_test_one_hot, y_train, y_test
 
 

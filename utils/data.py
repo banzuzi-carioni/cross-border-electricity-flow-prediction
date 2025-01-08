@@ -106,7 +106,7 @@ COLUMNS_MODEL_TOTAL_PRODUCTION = [
 ]
 
 
-def prepare_data(X_train: pd.DataFrame, X_test: pd.DataFrame, total_production: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def prepare_data_for_training(X_train: pd.DataFrame, X_test: pd.DataFrame, total_production: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
     '''
     Prepares the data for training by removing unnecessary columns, applying one-hot encoding, and dropping the datetime column.
     '''
@@ -151,6 +151,32 @@ def one_hot_encoding(df, feature, prefix=None) -> pd.DataFrame:
     return df_result
 
 
+def revert_one_hot_encoding(df: pd.DataFrame, column_prefix: str, original_column: str) -> pd.DataFrame:
+    """
+    Reverts one-hot encoding back to the original categorical column.
+    
+    Args:
+    - df (pd.DataFrame): The DataFrame with one-hot encoded columns.
+    - column_prefix (str): The prefix used for the one-hot encoded columns (e.g., 'from' or 'to').
+    - original_column (str): The name of the original column to restore.
+    
+    Returns:
+    - pd.DataFrame: The DataFrame with the original column restored.
+    """
+    df_result = df.copy()
+    
+    # Filter out the one-hot encoded columns based on the prefix
+    one_hot_columns = [col for col in df.columns if col.startswith(f"{column_prefix}_")]
+    
+    # Map one-hot encoded columns back to the original categorical column
+    df_result[original_column] = df_result[one_hot_columns].idxmax(axis=1).str[len(column_prefix) + 1:]
+    
+    # Drop the one-hot encoded columns
+    df_result = df_result.drop(columns=one_hot_columns)
+    
+    return df_result
+
+
 def split_training_data(
     feature_view: hsfs.feature_view.FeatureView,
     test_start: pd.Timestamp = pd.Timestamp('2024-01-01', tz='UTC').normalize()
@@ -160,3 +186,39 @@ def split_training_data(
     '''
     X_train, X_test, y_train, y_test = feature_view.train_test_split(test_start=test_start)
     return X_train, X_test, y_train, y_test
+
+
+def prepare_data_for_predictions(X: pd.DataFrame, total_production: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    '''
+    Prepares the data for training by removing unnecessary columns, applying one-hot encoding, and dropping the datetime column.
+    '''
+    X_result = X.copy()
+    # Apply one-hot encoding with prefixes
+    X_result = X_result.drop(columns = ['datetime'])
+    X_result = one_hot_encoding(X_result, 'country_from', prefix='from')
+    X_result = one_hot_encoding(X_result, 'country_to', prefix='to')
+    return X_result
+
+
+def add_country_codes_for_prediction(X: pd.DataFrame) -> pd.DataFrame:
+    '''
+    Adds the country codes to the DataFrame.
+    '''
+    df = X.copy()
+
+    # Create combinations of NL to NEIGHBOUR_ZONES and NEIGHBOUR_ZONES to NL
+    combinations = [('NL', zone) for zone in NEIGHBOUR_ZONES] + [(zone, 'NL') for zone in NEIGHBOUR_ZONES]
+
+    # Create a DataFrame with every combination
+    expanded_rows = []
+    for index, row in df.iterrows():
+        for country_from, country_to in combinations:
+            new_row = row.copy()
+            new_row['country_from'] = country_from
+            new_row['country_to'] = country_to
+            expanded_rows.append(new_row)
+
+    # Create a new DataFrame with the expanded rows
+    expanded_df = pd.DataFrame(expanded_rows)
+    expanded_df.reset_index(drop=True, inplace=True) 
+    return expanded_df
