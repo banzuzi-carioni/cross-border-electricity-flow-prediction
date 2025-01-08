@@ -2,9 +2,7 @@ import streamlit as st
 import pydeck as pdk
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, timedelta
-from utils.settings import ENV_VARS
-from app_utils import get_city_coordinates
+from app_utils import get_country_center_coordinates
 
 # Set page configuration
 st.set_page_config(
@@ -13,8 +11,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+
 # Title and Description
-st.title("🇳🇱 Netherlands Cross-border Electricity Flow Prediction")
+st.title("Netherlands Cross-border Electricity Flow Prediction 🇳🇱 ")
 st.markdown("""
 Monitor and analyze the predicted electricity flows **to and from** the Netherlands.
 Use the interactive maps and charts to gain insights into energy transfers, prices, and generation related to the Netherlands.
@@ -25,9 +24,10 @@ st.sidebar.header("Filters")
 
 # Load predictions data
 @st.cache_data
-def load_predictions(csv_path='predictions.csv'):
-    df = pd.read_csv(csv_path, parse_dates=['datetime'])
-    return df
+def load_predictions(csv_path='inference_pipeline/predictions/predictions.csv'):
+    df = pd.read_csv(csv_path, index_col=0, parse_dates=['datetime'])
+    df.loc[df['energy_sent'] < 0, 'energy_sent'] = 0
+    return df[['datetime', 'country_from', 'country_to', 'energy_sent', 'energy_price_nl', 'total_generation_nl']]
 
 predictions_df = load_predictions()
 
@@ -54,18 +54,16 @@ with st.sidebar:
         value=min_date
     )
     
-    # Hour Slider
-    selected_hour = st.slider(
-        "Select Hour of the Day",
-        min_value=-1,
-        max_value=23,
-        value=-1,
-        step=1,
-        format="%02d"
+    # Hour Dropdown
+    time_options = [f"{hour:02d}:00" for hour in range(24)]  # Generate 'HH:00' options
+    selected_time = st.selectbox(
+        "Select Hour",
+        options=["Total Day"] + time_options,
+        index=0
     )
     
     # Energy Flow Type
-    flow_type = st.selectbox(
+    flow_type = st.radio(
         "Energy Flow Type",
         options=["All", "Export", "Import"],
         index=0
@@ -75,15 +73,16 @@ with st.sidebar:
     apply_filters = st.button("Apply Filters")
 
 # Apply filters to the DataFrame
-def filter_data(df, date, hour, flow):
+def filter_data(df, date, time, flow):
     df_filtered = df.copy()
     
     # Filter by date
     df_filtered = df_filtered[df_filtered['datetime'].dt.date == date]
     
-    # Filter by hour if selected
-    if hour != -1:
-        df_filtered = df_filtered[df_filtered['datetime'].dt.hour == hour]
+    # Filter by hour if not "All"
+    if time != "Total Day":
+        selected_hour = int(time.split(":")[0])  # Extract hour as integer
+        df_filtered = df_filtered[df_filtered['datetime'].dt.hour == selected_hour]
     
     # Filter by flow type
     if flow == "Export":
@@ -97,12 +96,12 @@ if apply_filters:
     filtered_df = filter_data(
         filtered_df,
         selected_date,
-        selected_hour,
+        selected_time,
         flow_type
     )
 
 # Display Key Metrics
-st.header("📊 Key Metrics")
+st.header("Key Metrics")
 
 col1, col2, col3 = st.columns(3)
 
@@ -128,7 +127,7 @@ with col3:
     )
 
 # Tabs for Organized Content
-tab1, tab2, tab3 = st.tabs(["🗺️ Energy Flow Map", "📈 Time-Series Analysis", "📄 Detailed Data"])
+tab1, tab2, tab3 = st.tabs(["🌏 Energy Flow Map", "📈 Time-Series Analysis", "👩‍💻 Tabular Format"])
 
 with tab1:
     st.subheader("Energy Flow Map")
@@ -142,8 +141,8 @@ with tab1:
     })
     
     # Add coordinates based on city names
-    arc_data["start_coords"] = arc_data["start_city"].map(get_city_coordinates)
-    arc_data["end_coords"] = arc_data["end_city"].map(get_city_coordinates)
+    arc_data["start_coords"] = arc_data["start_city"].map(get_country_center_coordinates)
+    arc_data["end_coords"] = arc_data["end_city"].map(get_country_center_coordinates)
     
     # Remove entries with missing coordinates after mapping
     arc_data = arc_data.dropna(subset=["start_coords", "end_coords"])
@@ -172,8 +171,8 @@ with tab1:
     
     # Set the initial view of the map centered on the Netherlands
     view_state = pdk.ViewState(
-        latitude=52.1326,  # Latitude of the Netherlands
-        longitude=5.2913,  # Longitude of the Netherlands
+        latitude=52.25,  # Latitude of the Netherlands
+        longitude=5.54,  # Longitude of the Netherlands
         zoom=5,
         pitch=30
     )
@@ -200,13 +199,17 @@ with tab2:
     st.subheader("Time-Series Analysis")
     
     # Time-Series Plot for Energy Sent (Export and Import)
+    hourly_aggregated = filtered_df.copy()
+    hourly_aggregated['hour'] = hourly_aggregated['datetime'].dt.floor('h')  # Group by hour
+    aggregated_data = hourly_aggregated.groupby(['hour', 'flow_direction'])['energy_sent'].sum().reset_index()
+
     fig1 = px.line(
-        filtered_df,
-        x='datetime',
+        aggregated_data,
+        x='hour',
         y='energy_sent',
         color='flow_direction',
         title='Energy Sent Over Time',
-        labels={'datetime': 'Datetime', 'energy_sent': 'Energy Sent (MWh)', 'flow_direction': 'Flow Direction'},
+        labels={'hour': 'Datetime', 'energy_sent': 'Energy Sent (MWh)', 'flow_direction': 'Flow Direction'},
         markers=True
     )
     st.plotly_chart(fig1, use_container_width=True)
@@ -216,7 +219,7 @@ with tab2:
         filtered_df,
         x='datetime',
         y='energy_price_nl',
-        title='Energy Price Over Time (NL)',
+        title='Energy Price Over Time',
         labels={'datetime': 'Datetime', 'energy_price_nl': 'Energy Price (EUR/MWh)'},
         markers=True
     )
@@ -227,7 +230,7 @@ with tab2:
         filtered_df,
         x='datetime',
         y='total_generation_nl',
-        title='Total Energy Generation Over Time (NL)',
+        title='Total Energy Generation Over Time',
         labels={'datetime': 'Datetime', 'total_generation_nl': 'Total Generation (MWh)'},
         markers=True
     )
@@ -255,5 +258,5 @@ with tab3:
 # Footer
 st.markdown("""
 ---
-*Developed with ❤️ by [Your Name](https://yourwebsite.com)*
+*Developed with ❤️ by [Eric Banzuzi](https://www.linkedin.com/in/eric-banzuzi/) and [Rosamelia Carioni](https://www.linkedin.com/in/rosamelia-carioni/)*
 """)
