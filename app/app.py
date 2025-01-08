@@ -3,6 +3,7 @@ import pydeck as pdk
 import pandas as pd
 import plotly.express as px
 from app_utils import get_country_center_coordinates
+from utils.settings import PREDICTIONS_PATH, MAE_PATH
 
 # Set page configuration
 st.set_page_config(
@@ -24,12 +25,23 @@ st.sidebar.header("Filters")
 
 # Load predictions data
 @st.cache_data
-def load_predictions(csv_path='inference_pipeline/predictions/predictions.csv'):
+def load_predictions(csv_path: str = PREDICTIONS_PATH):
     df = pd.read_csv(csv_path, index_col=0, parse_dates=['datetime'])
     df.loc[df['energy_sent'] < 0, 'energy_sent'] = 0
     return df[['datetime', 'country_from', 'country_to', 'energy_sent', 'energy_price_nl', 'total_generation_nl']]
 
+# Load Monitoring Metrics
+@st.cache_data
+def load_maes(csv_path: str = MAE_PATH):
+    df = pd.read_csv(csv_path)
+    mae_import = df['mae_import'].iloc[-1]
+    mae_export = df['mae_export'].iloc[-1]
+    return mae_import, mae_export
+
+
 predictions_df = load_predictions()
+mae_import, mae_export = load_maes()
+
 
 # Filter the DataFrame to include only flows to/from the Netherlands
 filtered_df = predictions_df[
@@ -103,7 +115,7 @@ if apply_filters:
 # Display Key Metrics
 st.header("Key Metrics")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     total_energy_sent = filtered_df[filtered_df['flow_direction'] == 'Export']['energy_sent'].sum()
@@ -124,6 +136,18 @@ with col3:
     st.metric(
         label="Average Energy Price (EUR/MWh)",
         value=f"{avg_energy_price_nl:.2f}"
+    )
+
+with col4:
+    st.metric(
+        label="MAE Import Predictions yesterday (MWh)",
+        value=f"{mae_import:.2f}"
+    )
+
+with col5:
+    st.metric(
+        label="MAE Export Predictions yesterday (MWh)",
+        value=f"{mae_export:.2f}"
     )
 
 # Tabs for Organized Content

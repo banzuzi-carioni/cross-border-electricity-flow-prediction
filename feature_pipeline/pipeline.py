@@ -93,7 +93,7 @@ def daily_run(version: int = 1) -> None:
     print("Daily feature pipeline run complete.")
 
 
-def daily_forecast_run(version: int = 1) -> None:
+def daily_forecast_run(version: int = 1) -> pd.DataFrame:
     """
     A smaller-scale ETL pipeline for daily predictions:
     1) Extracts the most recent day's weather, prices, and generation data.

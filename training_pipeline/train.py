@@ -134,7 +134,6 @@ def save_model(
         cross_border_model.save(model_dir)
 
 
-
 def save_feature_importance_and_residual_plot(model, X_test: pd.DataFrame, model_name: str, num_features: int = 10) -> None:
     '''
     Saves the feature importance plot locally.

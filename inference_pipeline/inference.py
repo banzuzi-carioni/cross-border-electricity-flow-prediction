@@ -5,6 +5,9 @@ from utils import utils
 import pandas as pd
 from xgboost import XGBRegressor
 from utils.data import prepare_data_for_predictions, add_country_codes_for_prediction
+from inference_pipeline.monitoring import get_monitoring_metrics
+from utils.settings import PREDICTIONS_PATH
+
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -30,9 +33,12 @@ def daily_inference(version: int = 1) -> None:
 
     predictions = model.predict(batch_data)
 
+    mae_import, mae_export = get_monitoring_metrics(version=version)
+    print(f"Mean Absolute Error for import flows yesterday: {mae_import}")
+    print(f"Mean Absolute Error for export flows yesterday: {mae_export}")
 
     batch_data_datetime['energy_sent'] = predictions
-    batch_data_datetime.to_csv('inference_pipeline/predictions/predictions.csv')
+    batch_data_datetime.to_csv(PREDICTIONS_PATH)
     
     # save predictions to monitoring system
     monitor_fg = feature_store.get_or_create_feature_group(

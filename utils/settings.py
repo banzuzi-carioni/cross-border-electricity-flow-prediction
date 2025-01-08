@@ -39,7 +39,6 @@ def get_root_dir(default_value: str = ".") -> Path:
 
 
 ML_PIPELINE_ROOT_DIR = get_root_dir()
-# OUTPUT_DIR = ML_PIPELINE_ROOT_DIR / "output"
-# OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
+PREDICTIONS_PATH = 'inference_pipeline/predictions/predictions.csv' 
+MAE_PATH = 'inference_pipeline/monitoring/mae_metrics.csv'
 ENV_VARS = load_env_vars(root_dir=ML_PIPELINE_ROOT_DIR)
