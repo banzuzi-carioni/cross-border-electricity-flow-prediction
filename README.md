@@ -1,7 +1,7 @@
 # Netherlands Cross-Border Electricity Flow Prediction ⚡️
 
 ## About 
-This project provides an interactive tool to predict, monitor and analyze the direction and volume of electricity flows **to and from the Netherlands** 🇳🇱 and its energy transmission partners: Germany 🇩🇪, Belgium 🇧🇪, Great Britain 🇬🇧, Denmark 🇩🇰 and Norway 🇳🇴). The project uses a Serverless Machine Learning pipeline to predict the direction and amount of electricity flows based on historical data, day-ahead energy prices, and forecasts of electricity generation and weather. 
+This project provides an interactive tool to predict, monitor and analyze the direction and volume of electricity flows **to and from the Netherlands** 🇳🇱 and its energy transmission partners: Germany 🇩🇪, Belgium 🇧🇪, Great Britain 🇬🇧, Denmark 🇩🇰 and Norway 🇳🇴. The project uses a Serverless Machine Learning pipeline to predict the direction and amount of electricity flows based on historical data, day-ahead energy prices, and forecasts of electricity generation and weather. 
 
 Developed as part of the Final Project of the course [ID2223 Scalable Machine Learning and Deep Learning](https://www.kth.se/student/kurser/kurs/ID2223?l=en) at KTH, this project aimed to build and deploy a maintainable Machine Learning system capable of seamlessly generating and updating daily predictions.
 
