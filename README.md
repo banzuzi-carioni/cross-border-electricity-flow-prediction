@@ -127,11 +127,12 @@ The project provides a starting point for building scalable and dynamic systems 
 You can navigate the project using the following directory structure as a guide: 
 
 ```
-├── app.py                   # Streamlit application script
 ├── requirements.txt         # Python dependencies
 ├── README.md  
 ├── models/                  # Storage of the trained models and results
-├── github/workflows         # Github Actions              
+├── github/workflows         # Github Actions 
+├── app/                     # Streamlit application content
+│   └── app.py               # Streamlit application script             
 ├── utils/                   # Utility modules
 │   ├── data.py              # Related to handling of the data
 │   ├── utils.py             # General helper functions 
