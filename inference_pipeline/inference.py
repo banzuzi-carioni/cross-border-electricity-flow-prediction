@@ -1,10 +1,8 @@
 import argparse
 from feature_pipeline.ETL import load
 from feature_pipeline.pipeline import daily_forecast_run
-from utils import utils
-import pandas as pd
+from utils import data, utils
 from xgboost import XGBRegressor
-from utils.data import prepare_data_for_predictions, add_country_codes_for_prediction
 from inference_pipeline.monitoring import get_monitoring_metrics
 from utils.settings import PREDICTIONS_PATH
 
@@ -27,8 +25,8 @@ def daily_inference(version: int = 1) -> None:
     model.load_model(model_dir + '/model.json')
 
     batch_data = daily_forecast_run(version=version)
-    batch_data_datetime = add_country_codes_for_prediction(batch_data)
-    batch_data = prepare_data_for_predictions(batch_data_datetime)
+    batch_data_datetime = data.add_country_codes_for_prediction(batch_data)
+    batch_data = data.prepare_data_for_predictions(batch_data_datetime)
 
     predictions = model.predict(batch_data)
 

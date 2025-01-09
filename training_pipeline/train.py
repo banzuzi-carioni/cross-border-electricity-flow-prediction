@@ -2,46 +2,31 @@ import argparse
 import os 
 import hopsworks
 import pandas as pd
-from utils import data, utils
+from utils import data
 from utils.settings import ENV_VARS
 from hsml.schema import Schema
 from hsml.model_schema import ModelSchema
-from feature_pipeline.ETL import load
 from xgboost import XGBRegressor, plot_importance
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error, r2_score
-from typing import Tuple
 import matplotlib.pyplot as plt
+
+
+MODEL_DIR = "models"
+IMAGE_DIR = "models/images"
 
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', '-v', type=int, default=1, help='Version for the feature groups.')
     parser.add_argument('--hyperparameter_tuning', '-ht', default=False, action='store_true', help='Decides if hyperparametertuning is performed or not.')
+    parser.add_argument('--create_feature_view', '-cfv', default=False, action='store_true', help='Decides if a new feature view is created or not.')
     parser.add_argument("--model_name", type=str, default='model_all_production_2', help='Name given when saving the model both locally and in Hopsworks.')
     # Mutually exclusive group:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--total_production', '-tp', action='store_true', help='Defines how many and which features are used during training. In this case only the total production of energy is used.')
     group.add_argument('--all_production', '-ap', action='store_true', help='Defines how many and which features are used during training. In this case all types of energy produced per country are considered.')
     return parser
-
-
-def get_training_data(version: int, total_production: bool, create_feature_view: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    '''
-    Loads the feature view from the feature store and splits the data into training and testing sets.
-    '''
-    feature_store = load.get_feature_store()
-
-    if create_feature_view:
-        feature_view = utils.create_feature_view(version)
-    else:
-        feature_view = feature_store.get_feature_view(
-            name = 'cross_border_electricity_fv',
-            version = version
-        )
-    X_train, X_test, y_train, y_test = data.split_training_data(feature_view)
-    X_train_one_hot, X_test_one_hot = data.prepare_data_for_training(X_train, X_test, total_production) 
-    return X_train_one_hot, X_test_one_hot, y_train, y_test
 
 
 def train(hyperparameter_tuning: bool, X_train_one_hot: pd.DataFrame, y_train: pd.DataFrame) -> XGBRegressor:
@@ -109,11 +94,10 @@ def save_model(
     '''
     Saves the model locally and in Hopsworks.
     '''
-    model_dir = "models"
-    if not os.path.exists(model_dir):
-        os.mkdir(model_dir)
+    if not os.path.exists(MODEL_DIR):
+        os.mkdir(MODEL_DIR)
     if locally:
-        model.save_model(model_dir + f"/{model_name}.json")
+        model.save_model(MODEL_DIR + f"/{model_name}.json")
     if to_hopsworks:
         project = hopsworks.login(api_key_value=ENV_VARS["HOPSWORKS"], project='cross_border_electricity')
         mr = project.get_model_registry()
@@ -131,20 +115,25 @@ def save_model(
             description="Trained XGBRegressor model for predicting cross-border electricity flows.",
         )
         # Saving the model artifacts in the model registry
-        cross_border_model.save(model_dir)
+        cross_border_model.save(MODEL_DIR)
 
 
-def save_feature_importance_and_residual_plot(model, X_test: pd.DataFrame, model_name: str, num_features: int = 10) -> None:
+def save_feature_importance_and_residual_plot(
+    model, 
+    X_test: pd.DataFrame, 
+    y_test: pd.DataFrame, 
+    model_name: str, 
+    num_features: int = 10
+) -> None:
     '''
     Saves the feature importance plot locally.
     '''
-    images_dir = "models/images"
-    if not os.path.exists(images_dir):
-        os.makedirs(images_dir)
+    if not os.path.exists(IMAGE_DIR):
+        os.makedirs(IMAGE_DIR)
 
     # Feature importance plot
     plot_importance(model, max_num_features=num_features)
-    feature_importance_path = os.path.join(images_dir, f'feature_importance_{model_name}.png')
+    feature_importance_path = os.path.join(IMAGE_DIR, f'feature_importance_{model_name}.png')
     plt.savefig(feature_importance_path)
     plt.clf()  # Clear the figure for the next plot
 
@@ -157,25 +146,26 @@ def save_feature_importance_and_residual_plot(model, X_test: pd.DataFrame, model
     plt.xlabel("Actual values")
     plt.ylabel("Residuals")
     plt.title("Residual plot")
-    residual_plot_path = os.path.join(images_dir, f'residual_plot_{model_name}.png')
+    residual_plot_path = os.path.join(IMAGE_DIR, f'residual_plot_{model_name}.png')
     plt.savefig(residual_plot_path)
     plt.clf()
 
 
-if __name__ == "__main__":
-    parser = get_parser()
-    args = parser.parse_args()
-    version = args.version
-    total_production = args.total_production
-    hyperparameter_tuning = args.hyperparameter_tuning
-    model_name = args.model_name
-
-    # Train the model
+def train_run(
+    version: int,
+    total_production: bool, 
+    hyperparameter_tuning: bool, 
+    model_name: str, 
+    create_feature_view: bool = False
+) -> None:
+    '''
+    Trains the model and saves it locally and in Hopsworks.
+    '''
     print("Starting training...")
-    if args.total_production:
-        X_train_one_hot, X_test_one_hot, y_train, y_test = get_training_data(version, True)
+    if total_production:
+        X_train_one_hot, X_test_one_hot, y_train, y_test = data.get_training_data(version, True, create_feature_view)
     else:
-        X_train_one_hot, X_test_one_hot, y_train, y_test = get_training_data(version, False)
+        X_train_one_hot, X_test_one_hot, y_train, y_test = data.get_training_data(version, False, create_feature_view)
     
     model = train(hyperparameter_tuning, X_train_one_hot, y_train)
 
@@ -197,4 +187,10 @@ if __name__ == "__main__":
     # Save the feature importance plot and residual plot
     save_feature_importance_and_residual_plot(model, X_test_one_hot, model_name)
 
-    print(f"Model saved locally and to Hopsworks with name '{model_name}'.") 
+    print(f"Model saved locally and to Hopsworks with name '{model_name}'.")
+
+
+if __name__ == "__main__":
+    parser = get_parser()
+    args = parser.parse_args()
+    train_run(args.version, args.total_production, args.hyperparameter_tuning, args.model_name, args.create_feature_view)

@@ -1,7 +1,8 @@
 import pandas as pd
 import hsfs
-from feature_pipeline.ETL import load, transform
+from feature_pipeline.ETL import load
 from typing import Tuple
+from utils.utils import create_feature_view
 
 
 BZN2COUNTRY = {
@@ -186,6 +187,24 @@ def split_training_data(
     '''
     X_train, X_test, y_train, y_test = feature_view.train_test_split(test_start=test_start)
     return X_train, X_test, y_train, y_test
+
+
+def get_training_data(version: int, total_production: bool, create_fv: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    '''
+    Loads the feature view from the feature store and splits the data into training and testing sets.
+    '''
+    feature_store = load.get_feature_store()
+
+    if create_fv:
+        feature_view = create_feature_view(version)
+    else:
+        feature_view = feature_store.get_feature_view(
+            name = 'cross_border_electricity_fv',
+            version = version
+        )
+    X_train, X_test, y_train, y_test = split_training_data(feature_view)
+    X_train_one_hot, X_test_one_hot = prepare_data_for_training(X_train, X_test, total_production) 
+    return X_train_one_hot, X_test_one_hot, y_train, y_test
 
 
 def prepare_data_for_predictions(X: pd.DataFrame, total_production: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:

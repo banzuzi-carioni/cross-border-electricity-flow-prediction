@@ -1,9 +1,12 @@
-from geopy.geocoders import Nominatim
-from typing import Tuple
 import hopsworks
+import hsfs
+import pandas as pd
+import matplotlib.pyplot as plt
+from typing import Tuple
 from utils.settings import ENV_VARS
 from feature_pipeline.ETL import load, transform
-import hsfs
+from matplotlib.ticker import MultipleLocator
+
 
 COUTRY_TO_COORDS = {
     'NL': (52.25, 5.54),
@@ -14,12 +17,14 @@ COUTRY_TO_COORDS = {
     'BE': (50.64, 4.67)
 }
 
+
 def get_country_center_coordinates(country_code: str):
     """
     Takes city name and returns its latitude and longitude (rounded to 2 digits after dot).
     """
     latitude, longitude = COUTRY_TO_COORDS.get(country_code, (0, 0))
     return longitude, latitude
+
 
 def get_model_registry(model_name: str = 'model', version: int = 1) -> str:
     '''
@@ -75,3 +80,42 @@ def get_feature_group(name: str, version: int = 1) -> hsfs.feature_group.Feature
     Returns the feature group from the feature store.
     '''
     return load.retrieve_feature_group(name=name, version=version)
+
+
+def plot_hourly_data(df: pd.DataFrame, df2: pd.DataFrame, file_path: str = None) -> None:
+    """
+    Generates monitoring plots for the hourly energy data.
+    """
+    # Ensure datetime is parsed correctly
+    hourly_data = df.copy()
+    hourly_data['hour'] = hourly_data['datetime'].dt.hour  # Extract hour from datetime
+    # Group data by hour
+    hourly_data.set_index('hour', inplace=True)
+    
+    hourly_data2 = df2.copy()
+    hourly_data2['hour'] = hourly_data2['datetime'].dt.hour  # Extract hour from datetime
+    # Group data by hour
+    hourly_data2.set_index('hour', inplace=True)
+
+    # Plotting
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plot data
+    ax.plot(hourly_data.index, hourly_data['energy_sent'], label='predictions', color='red', linewidth=2, marker='o')
+    ax.plot(hourly_data2.index, hourly_data2['energy_sent'], label='real', color='black', linewidth=2, marker='^')
+    
+    # Customize the plot
+    ax.set_xlabel('Hour of Day', fontsize=12)
+    ax.set_ylabel('Values', fontsize=12)
+    ax.set_title('Hourly Energy Data', fontsize=14)
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+    ax.xaxis.set_major_locator(MultipleLocator(1))  # Ensure x-axis shows every hour
+    ax.legend(fontsize=10)
+    
+    # Save and return the plot
+    plt.tight_layout()
+    plt.xlim(-0.25, 23)
+    if file_path:
+        plt.savefig(file_path)
+    plt.show()
+    
