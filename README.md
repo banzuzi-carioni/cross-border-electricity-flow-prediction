@@ -109,7 +109,7 @@ Additionally, we performed a grid search to optimize hyperparameters, including 
 - **learning_rate:** 0.3  
 - **subsample:** 1  
 
-This configuration was applied to the model trained only on total energy produced per country, with the objective of minimizing squared error. The model was trained on data from 2018 to 2024 and tested on one year of data from 2024. The key results include:  
+This configuration was applied to the model trained only on total energy produced per country, with the objective of minimizing squared error. The model was trained on data from 2018 to 2023 and tested on one year of data from 2024. The key results include:  
 - **R-squared:** 0.4805  
 - **Mean Squared Error (MSE):** 221547  
 
