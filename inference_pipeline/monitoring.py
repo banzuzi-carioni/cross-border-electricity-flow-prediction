@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import Patch
 from matplotlib.ticker import MultipleLocator
-import seaborn as sns
 from feature_pipeline.ETL import load
 from sklearn.metrics import mean_absolute_error
 import os
@@ -11,7 +10,6 @@ from utils.settings import PREDICTIONS_PATH, MAE_PATH
 
 
 def plot_hourly_data(df: pd.DataFrame, df2: pd.DataFrame, file_path: str = None) -> None:
-    sns.set_style()
     
     # Ensure datetime is parsed correctly
     df['hour'] = df['datetime'].dt.hour  # Extract hour from datetime
@@ -61,7 +59,6 @@ def get_monitoring_metrics(fg_name: str = 'model_data', version: int = 1, csv_fi
     """
     yesterday = pd.Timestamp.today().normalize() - pd.Timedelta(days=1)
     start = yesterday.replace(hour=23, minute=0, second=0, microsecond=0) - pd.Timedelta(days=1)
-    print(start)
 
     model_fg = load.retrieve_feature_group(name=fg_name, version=version)
     model_data_df = model_fg.filter(
