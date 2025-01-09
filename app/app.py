@@ -24,14 +24,12 @@ Use the interactive maps and charts to gain insights into energy transfers, pric
 st.sidebar.header("Filters")
 
 # Load predictions data
-@st.cache_data
 def load_predictions(csv_path: str = 'inference_pipeline/predictions/predictions.csv'):
     df = pd.read_csv(csv_path, index_col=0, parse_dates=['datetime'])
     df.loc[df['energy_sent'] < 0, 'energy_sent'] = 0
     return df[['datetime', 'country_from', 'country_to', 'energy_sent', 'energy_price_nl', 'total_generation_nl']]
 
 # Load Monitoring Metrics
-@st.cache_data
 def load_maes(csv_path: str = 'inference_pipeline/monitoring/mae_metrics.csv'):
     df = pd.read_csv(csv_path)
     mae_import = df['mae_import'].iloc[-1]
