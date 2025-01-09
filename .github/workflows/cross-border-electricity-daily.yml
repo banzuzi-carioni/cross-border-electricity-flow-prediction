@@ -47,5 +47,5 @@ jobs:
         with:
           commit_message: "Daily cross-border electricity predictions"
           commit_options: '--no-verify --signoff'
-          file_pattern: 'inference_pipeline/predictions/*'
+          file_pattern: 'inference_pipeline/predictions/* inference_pipeline/monitoring/*'
           repository: .

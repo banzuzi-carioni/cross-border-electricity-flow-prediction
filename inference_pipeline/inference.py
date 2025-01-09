@@ -9,7 +9,6 @@ from inference_pipeline.monitoring import get_monitoring_metrics
 from utils.settings import PREDICTIONS_PATH
 
 
-
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', '-v', type=int, default=1, help='Version for the feature groups.')
@@ -33,9 +32,13 @@ def daily_inference(version: int = 1) -> None:
 
     predictions = model.predict(batch_data)
 
-    mae_import, mae_export = get_monitoring_metrics(version=version)
-    print(f"Mean Absolute Error for import flows yesterday: {mae_import}")
-    print(f"Mean Absolute Error for export flows yesterday: {mae_export}")
+    # this only works for the first inference pipeline run per day
+    try:
+        mae_import, mae_export = get_monitoring_metrics(version=version)
+        print(f"Mean Absolute Error for import flows yesterday: {mae_import}")
+        print(f"Mean Absolute Error for export flows yesterday: {mae_export}")
+    except Exception as e:
+        pass
 
     batch_data_datetime['energy_sent'] = predictions
     batch_data_datetime.to_csv(PREDICTIONS_PATH)
