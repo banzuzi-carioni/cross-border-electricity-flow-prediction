@@ -199,7 +199,7 @@ def extract_weather_forecast(
     return df
 
 
-def extract_weather_data(load_locally:bool = True, daily:bool = False, forecast:bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:     
+def extract_weather_data(load_locally: bool = True, daily: bool = False, forecast: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:     
     """
     Extracts weather data for multiple countries, supporting both historical data and recent daily forecasts.
     """
@@ -231,7 +231,7 @@ def extract_weather_data(load_locally:bool = True, daily:bool = False, forecast:
         return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
 
 
-def extract_price_data(load_locally:bool = True, daily:bool= False, forecast:bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
+def extract_price_data(load_locally: bool = True, daily: bool= False, forecast: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
     """
     Retrieves day-ahead electricity prices for multiple countries, either from saved local data or API queries.
     """
@@ -259,7 +259,7 @@ def extract_price_data(load_locally:bool = True, daily:bool= False, forecast:boo
     return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
 
 
-def extract_energy_generation_data(load_locally = True, daily = False, forecast = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
+def extract_energy_generation_data(load_locally: bool = True, daily: bool = False, forecast: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
     """
     Collects historical energy generation data for multiple countries, with options for daily updates or local file loading.
     """
@@ -282,8 +282,15 @@ def extract_energy_generation_data(load_locally = True, daily = False, forecast 
     df_BE = extract_energy_generation('BE', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
     df_DE_LU = extract_energy_generation('DE_LU', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
     df_DK_1 = extract_energy_generation('DK_1', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
-    df_GB = extract_energy_generation('UK', start_time=start_time, end_time=end_time, to_CSV=to_CSV) if not forecast else None
     df_NO_2 = extract_energy_generation('NO_2', start_time=start_time, end_time=end_time, to_CSV=to_CSV, forecast=forecast)
+    # UK data is not always available in the ENTSO-E API, so we'll fill it with zeros for now
+    try:
+        df_GB = extract_energy_generation('UK', start_time=start_time, end_time=end_time, to_CSV=to_CSV) if not forecast else None
+    except Exception as e:
+        print(f'Error in fetching UK energy generation data, filling with zeros instead.')
+        df_GB = df_NO_2.copy()
+        df_GB = df_GB.map(lambda x: 0 if isinstance(x, float) else x)
+
     return df_NL, df_BE, df_DE_LU, df_DK_1, df_GB, df_NO_2
 
 
@@ -305,7 +312,7 @@ def extract_flow_data(load_locally: bool = True, country_code: str = 'NL', daily
     return extract_physical_flows(country_code=country_code, start_time=start_time, end_time=end_time, to_CSV=to_CSV)
 
 
-def pre_load_df(path_specific) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def pre_load_df(path_specific: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Loads pre-existing data from CSV files for multiple countries, supporting both energy generation and general data pipelines.
     """
@@ -335,7 +342,7 @@ def extract_backfill_data():
           generation_BE, generation_DE_LU, generation_DK_1, generation_GB, generation_NO_2, import_flow, export_flow
 
 
-def extract_daily_data(forecast = False):
+def extract_daily_data(forecast: bool = False):
     """
     Fetches daily updates for weather, electricity prices, generation, and flow data, integrating them into a daily feature pipeline.
     """
