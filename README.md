@@ -93,7 +93,7 @@ These variables were obtained using the Open-Meteo platform, which provides free
 ## Results  
 
 ### ⚡️ **Graphical User Interface**  
-Our [interactive interface](https://nl-cross-border-electricity-flow-prediction.streamlit.app/) offers an engaging way to explore the project results. With three intuitive tabs, you can:  
+Our [interactive interface](https://nl-electricity-flow.streamlit.app/) offers an engaging way to explore the project results. With three intuitive tabs, you can:  
 - **Visualize Energy Flows:** Dive into the **Energy Flow Map** to observe electricity transfers between the Netherlands and its neighboring countries. Color-coded arcs represent the direction of the flow, providing a clear and dynamic visualization.  
 - **Analyze Trends:** Use the **Time-Series Analysis** tab to explore patterns in energy flows, prices, and total energy generation over time. This enables deeper insights into market behaviors and energy dynamics.  
 - **View and Export Tabular Data:** Navigate to the **Tabular Format** section to inspect detailed predictions and download the data for further analysis.
@@ -184,7 +184,7 @@ To extract data and interact with the required services, you will need API keys 
    ```  
 
 ### ⚡️ Usage  
-1. Launch the app using Streamlit or access the deployed version [here](https://nl-cross-border-electricity-flow-prediction.streamlit.app/).  
+1. Launch the app using Streamlit or access the deployed version [here](https://nl-electricity-flow.streamlit.app/).  
 2. Use the sidebar to filter by date, hour, and energy flow type (Export, Import, or All).  
 3. Explore the following tabs:  
    - **Energy Flow Map:** Visualize electricity flows between countries.  
