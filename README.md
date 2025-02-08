@@ -181,7 +181,15 @@ To extract data and interact with the required services, you will need API keys 
 6. Run the Streamlit app:  
    ```bash
    streamlit run app/app.py
-   ```  
+   ```
+   
+7. (OPTIONAL) Alternative to setting up your own python environment with steps 2. and 3. is to use docker:
+   ```bash
+   # Start (and build) the container
+   docker compose -f docker/docker-compose.yml up -d
+   # Enter the container
+   docker exec -it dev_eflowcast /bin/bash
+   ```
 
 ### ⚡️ Usage  
 1. Launch the app using Streamlit or access the deployed version [here](https://e-flowcast.streamlit.app/).  
