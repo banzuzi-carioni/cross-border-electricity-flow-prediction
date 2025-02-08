@@ -1,0 +1,15 @@
+services:
+  eflowcast:
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    platform: linux/amd64
+    container_name: dev_eflowcast
+    working_dir: /usr/src
+    volumes:
+      - ../:/usr/src
+    ports:
+      - '8501:8501'
+      - '8502:8502'
+      - '8503:8503'
+      - '8504:8504'

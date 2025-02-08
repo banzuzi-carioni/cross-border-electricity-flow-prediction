@@ -1,0 +1,4 @@
+docker compose -f docker/docker-compose.yml down
+docker volume prune -af && docker container prune -f
+docker compose -f docker/docker-compose.yml up -d
+docker exec -it dev_eflowcast /bin/bash
